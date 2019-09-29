@@ -5,7 +5,7 @@
 + Django 2.2
 
 ## General concept
-![alt text](https://raw.githubusercontent.com/LeoneBacciu/django-email-verification/master/emailFlow.png)
+![alt text](emailFlow.png?raw=true "Flow")
 
 ## Installation
 
