@@ -5,7 +5,7 @@
 + Django 2.2
 
 ## General concept
-![alt text](emailFlow.png "Flow")
+![alt text](emailFlow.png?raw=True "Flow")
 
 ## Installation
 
