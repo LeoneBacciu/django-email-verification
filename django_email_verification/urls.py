@@ -1,6 +1,6 @@
-from .Confirm import verify
+from .views import verify
 from django.urls import path
 
 urlpatterns = [
-    path('<str:email_token>', verify)
+    path('<str:email>/<str:email_token>', verify)
 ]

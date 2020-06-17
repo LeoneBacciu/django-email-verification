@@ -1,11 +1,12 @@
-# Readme in progress
+# Django email validator
 
-# Requirements
-+ Python >= 3.6
-+ Django 2.2
+
+## Requirements
++ Python >= 3.8
++ Django 3.0.7
 
 ## General concept
-![alt text](emailFlow.png?raw=True "Flow")
+![alt text](https://github.com/LeoneBacciu/django-email-verification/blob/master/emailFlow.png?raw=True "Flow")
 
 ## Installation
 
@@ -29,18 +30,19 @@ INSTALLED_APPS = [
 ## Settings parameters
 You have to add these parameters to the settings, you have to include all of them except the last one:
 ```python
+EMAIL_ACTIVE_FIELD = 'is_active'
 EMAIL_SERVER = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_ADDRESS = 'mymail@gmail.com'
-EMAIL_PASSWORD = 'mYC00lP4ssw0rd'
+EMAIL_PASSWORD = 'mYC00lP4ssw0rd' # os.environ['password_key'] suggested
 EMAIL_MAIL_SUBJECT = 'Confirm your email'
 EMAIL_MAIL_HTML = 'mail_body.html'
 EMAIL_MAIL_PLAIN = 'mail_body.txt'
 EMAIL_PAGE_TEMPLATE = 'confirm_template.html'
-EMAIL_PAGE_DOMAIN = 'http://mysite.com/'
-EMAIL_MODEL_ADMIN = False # the default value is False
+EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
 ```
 In detail:
++ `EMAIL_ACTIVE_FIELD`: the user model filed which will be set to `True` once the email is confirmed
 + `EMAIL_SERVER`: your mail provider's server (e.g. `'smtp.gmail.com'` for gmail)
 + `EMAIL_PORT`: your mail provider's server port (e.g. `587` for gmail)
 + `EMAIL_ADDRESS`: your email address
@@ -51,7 +53,6 @@ In detail:
     * `PLAIN`: the mail body in form of .txt file (needed if `HTML` is not defined)
 + `EMAIL_PAGE_TEMPLATE`: the template of the success/error view
 + `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain)
-+ `EMAIL_MODEL_ADMIN`: True if you want to see the model in the admin panel (only for debugging purposes)
 
 ## Templates examples
 The `EMAIL_MAIL_HTML` should look like this (`{{ link }}` is passed during the rendering):
@@ -93,7 +94,7 @@ The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}` is boolean and 
     {% if success %}
         You have confirmed your account!
     {% else %}
-        Errore, invalid token!
+        Error, invalid token!
     {% endif %}
 </body>
 </html>
@@ -127,6 +128,6 @@ urlpatterns = [
     path('email/', include(mail_urls)),
 ]
 ```
-When a request arrives to `https.//mydomain.com/email/<token>` the package verifies the token and:
+When a request arrives to `https.//mydomain.com/email/<base64 email>/<token>` the package verifies the token and:
 + if it corresponds to a pending token it renders the `EMAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
 + if it doesn't correspond it renders the `EMAIL_PAGE_TEMPLATE` passing `success=False`

@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class DjangoEmailConfimConfig(AppConfig):
-    name = 'email_verification'
+    name = 'django_email_verification'
