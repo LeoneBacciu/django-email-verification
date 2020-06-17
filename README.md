@@ -42,7 +42,7 @@ EMAIL_PAGE_TEMPLATE = 'confirm_template.html'
 EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
 ```
 In detail:
-+ `EMAIL_ACTIVE_FIELD`: the user model filed which will be set to `True` once the email is confirmed
++ `EMAIL_ACTIVE_FIELD`: the user model field which will be set to `True` once the email is confirmed
 + `EMAIL_SERVER`: your mail provider's server (e.g. `'smtp.gmail.com'` for gmail)
 + `EMAIL_PORT`: your mail provider's server port (e.g. `587` for gmail)
 + `EMAIL_ADDRESS`: your email address
@@ -113,7 +113,7 @@ def myCreateView(request):
     sendConfirm(user)
     return render(...)
 ```
-`sendConfirm(user)` sets user's `is_active` to `False` and sends an email with the defined template (and the pseudo-random generated token) to the user.
+`sendConfirm(user)` sets user's `EMAIL_ACTIVE_FIELD` to `False` and sends an email with the defined template (and the pseudo-random generated token) to the user.
 
 ## Token verification
 You have to include the urls in `urls.py`
