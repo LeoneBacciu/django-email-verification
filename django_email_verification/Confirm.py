@@ -43,6 +43,9 @@ def sendConfirm_thread(email, token):
     mail_plain = validateAndGetField('EMAIL_MAIL_PLAIN', raise_error=False)
     mail_html = validateAndGetField('EMAIL_MAIL_HTML', raise_error=False)
 
+    if not (mail_plain or mail_html):  # Validation for mail_plain and mail_html as both of them have raise_error=False
+        raise NotAllFieldCompiled(f"Both EMAIL_MAIL_PLAIN and EMAIL_MAIL_HTML missing from settings.py, at least one of them is required.")
+
     domain += '/' if not domain.endswith('/') else ''
 
     msg = MIMEMultipart('alternative')
@@ -57,18 +60,21 @@ def sendConfirm_thread(email, token):
             addr = str(v[0][0][0])
             link = domain + addr[0: addr.index('%')] + token
 
-    try:
-        text = render_to_string(mail_plain, {'link': link})
-        part1 = MIMEText(text, 'plain')
-        msg.attach(part1)
-    except AttributeError:
-        pass
-    try:
-        html = render_to_string(mail_html, {'link': link})
-        part2 = MIMEText(html, 'html')
-        msg.attach(part2)
-    except AttributeError:
-        pass
+    if mail_plain:
+        try:
+            text = render_to_string(mail_plain, {'link': link})
+            part1 = MIMEText(text, 'plain')
+            msg.attach(part1)
+        except AttributeError:
+            pass
+        
+    if mail_html:
+        try:
+            html = render_to_string(mail_html, {'link': link})
+            part2 = MIMEText(html, 'html')
+            msg.attach(part2)
+        except AttributeError:
+            pass
 
     if not msg.get_payload():
         raise EmailTemplateNotFound('No email template found')
