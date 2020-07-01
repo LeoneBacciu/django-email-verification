@@ -34,7 +34,8 @@ def sendConfirm(user, **kwargs):
 
 
 def sendConfirm_thread(email, token):
-    sender = validateAndGetField('EMAIL_SERVER')
+    email_server = validateAndGetField('EMAIL_SERVER')
+    sender = validateAndGetField('EMAIL_FROM_ADDRESS')
     domain = validateAndGetField('EMAIL_PAGE_DOMAIN')
     subject = validateAndGetField('EMAIL_MAIL_SUBJECT')
     address = validateAndGetField('EMAIL_ADDRESS')
@@ -79,7 +80,7 @@ def sendConfirm_thread(email, token):
     if not msg.get_payload():
         raise EmailTemplateNotFound('No email template found')
 
-    server = SMTP(sender, port)
+    server = SMTP(email_server, port)
     server.starttls()
     server.login(address, password)
     server.sendmail(sender, email, msg.as_string())
