@@ -34,6 +34,7 @@ EMAIL_ACTIVE_FIELD = 'is_active'
 EMAIL_SERVER = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_ADDRESS = 'mymail@gmail.com'
+EMAIL_FROM_ADDRESS = 'noreply@aliasaddress.com'
 EMAIL_PASSWORD = 'mYC00lP4ssw0rd' # os.environ['password_key'] suggested
 EMAIL_MAIL_SUBJECT = 'Confirm your email'
 EMAIL_MAIL_HTML = 'mail_body.html'
@@ -46,6 +47,7 @@ In detail:
 + `EMAIL_SERVER`: your mail provider's server (e.g. `'smtp.gmail.com'` for gmail)
 + `EMAIL_PORT`: your mail provider's server port (e.g. `587` for gmail)
 + `EMAIL_ADDRESS`: your email address
++ `EMAIL_FROM_ADDRESS`: this can be the same as email_address or an alias address if required.
 + `EMAIL_PASSWORD`: your email address' password
 + `EMAIL_MAIL_`:
     * `SUBJECT`: the mail default subject (needed)
