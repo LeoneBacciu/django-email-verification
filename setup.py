@@ -9,6 +9,7 @@ setuptools.setup(
     author="Leone Bacciu",
     author_email="leonebacciu@gmail.com",
     description="Email confirmation app for django",
+    license='MIT',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/LeoneBacciu/django-email-verification",
