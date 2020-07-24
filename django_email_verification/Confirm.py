@@ -110,7 +110,7 @@ def verifyToken(email, email_token):
                 setattr(user, active_field, True)
                 user.last_login = timezone.now()
                 user.save()
-            return valid
+                return valid
     except b64Error:
         pass
     return False
