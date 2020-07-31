@@ -90,7 +90,7 @@ def sendConfirm_thread(email, token):
 def validateAndGetField(field, raise_error=True, default_type=str):
     try:
         d = getattr(settings, field)
-        print(field, d)
+        #print(field, d)
         if d == "" or d is None or not isinstance(d, default_type):
             raise AttributeError
         return d
