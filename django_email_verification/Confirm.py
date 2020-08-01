@@ -1,16 +1,15 @@
-from binascii import Error as b64Error
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from base64 import urlsafe_b64decode, urlsafe_b64encode
-from smtplib import SMTP
-from threading import Thread
-
+from binascii import Error as b64Error
 from django.conf import settings
-from django.template.loader import render_to_string
-from django.urls import get_resolver
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.tokens import default_token_generator
+from django.template.loader import render_to_string
+from django.urls import get_resolver
 from django.utils import timezone
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from smtplib import SMTP
+from threading import Thread
 
 from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
 
@@ -90,7 +89,6 @@ def sendConfirm_thread(email, token):
 def validateAndGetField(field, raise_error=True, default_type=str):
     try:
         d = getattr(settings, field)
-        print(field, d)
         if d == "" or d is None or not isinstance(d, default_type):
             raise AttributeError
         return d
