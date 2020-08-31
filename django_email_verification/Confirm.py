@@ -7,6 +7,7 @@ from django.db.models import Model
 from django.template.loader import render_to_string
 from django.urls import get_resolver
 from django.utils import timezone
+from django.apps import apps
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
@@ -16,10 +17,13 @@ from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
 
 
 def sendConfirm(user, **kwargs):
-    active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
+    no_custom_model = validateAndGetField('EMAIL_USER_MODEL', raise_error=False) is None
+    if no_custom_model:
+        active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
     try:
-        setattr(user, active_field, False)
-        user.save()
+        if no_custom_model:
+            setattr(user, active_field, False)
+            user.save()
 
         try:
             token = kwargs['token']
@@ -101,8 +105,9 @@ def validateAndGetField(field, raise_error=True, default_type=str):
 
 def verifyToken(email, email_token):
     try:
-        user_model = validateAndGetField('EMAIL_USER_MODEL', raise_error=False, default_type=Model)
-        if user_model is None:
+        try:
+            user_model = apps.get_model(*validateAndGetField('EMAIL_USER_MODEL').split('.', 1))
+        except NotAllFieldCompiled:
             user_model = get_user_model()
         users = user_model.objects.filter(email=urlsafe_b64decode(email).decode("utf-8"))
         for user in users:
