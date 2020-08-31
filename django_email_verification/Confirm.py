@@ -3,6 +3,7 @@ from binascii import Error as b64Error
 from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.tokens import default_token_generator
+from django.db.models import Model
 from django.template.loader import render_to_string
 from django.urls import get_resolver
 from django.utils import timezone
@@ -100,7 +101,10 @@ def validateAndGetField(field, raise_error=True, default_type=str):
 
 def verifyToken(email, email_token):
     try:
-        users = get_user_model().objects.filter(email=urlsafe_b64decode(email).decode("utf-8"))
+        user_model = validateAndGetField('EMAIL_USER_MODEL', raise_error=False, default_type=Model)
+        if user_model is None:
+            user_model = get_user_model()
+        users = user_model.objects.filter(email=urlsafe_b64decode(email).decode("utf-8"))
         for user in users:
             valid = default_token_generator.check_token(user, email_token)
             if valid:
