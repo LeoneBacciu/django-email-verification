@@ -3,7 +3,6 @@ from binascii import Error as b64Error
 from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.tokens import default_token_generator
-from django.db.models import Model
 from django.template.loader import render_to_string
 from django.urls import get_resolver
 from django.utils import timezone
@@ -17,14 +16,15 @@ from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
 
 
 def sendConfirm(user, **kwargs):
-    no_custom_model = validateAndGetField('EMAIL_USER_MODEL', raise_error=False) is None
-    if no_custom_model:
-        active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
+    uses_custom_model = not(validateAndGetField('EMAIL_USER_MODEL', raise_error=False) is None)
+    if uses_custom_model:
+        user_fk = validateAndGetField('EMAIL_USER_MODEL_FK')
+    active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
     try:
-        if no_custom_model:
-            setattr(user, active_field, False)
-            user.save()
-
+        setattr(user, active_field, False)
+        user.save()
+        if uses_custom_model:
+            user = getattr(user, user_fk)
         try:
             token = kwargs['token']
         except KeyError:
@@ -106,17 +106,26 @@ def validateAndGetField(field, raise_error=True, default_type=str):
 def verifyToken(email, email_token):
     try:
         try:
-            user_model = apps.get_model(*validateAndGetField('EMAIL_USER_MODEL').split('.', 1))
+            user_fk = validateAndGetField("EMAIL_USER_MODEL_FK")
+            args = {f"{user_fk}__email": urlsafe_b64decode(email).decode("utf-8")}
+            users = apps.get_model(*validateAndGetField('EMAIL_USER_MODEL').split('.', 1)).objects.filter(**args)
+            custom_user = True
         except NotAllFieldCompiled:
-            user_model = get_user_model()
-        users = user_model.objects.filter(email=urlsafe_b64decode(email).decode("utf-8"))
+            users = get_user_model().objects.filter(email=urlsafe_b64decode(email).decode("utf-8"))
+            custom_user = False
         for user in users:
-            valid = default_token_generator.check_token(user, email_token)
+            if custom_user:
+                actual_user = getattr(user, user_fk)
+            else:
+                actual_user = user
+            valid = default_token_generator.check_token(actual_user, email_token)
             if valid:
                 active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
                 setattr(user, active_field, True)
-                user.last_login = timezone.now()
-                user.save()
+                actual_user.last_login = timezone.now()
+                actual_user.save()
+                if custom_user:
+                    user.save()
                 return valid
     except b64Error:
         pass
