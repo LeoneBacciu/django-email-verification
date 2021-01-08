@@ -21,6 +21,11 @@ def sendConfirm(user, **kwargs):
         user.save()
 
         try:
+            default_token_generator.key_salt = kwargs['custom_salt']
+        except:
+            pass
+
+        try:
             token = kwargs['token']
         except KeyError:
             token = default_token_generator.make_token(user)
