@@ -67,7 +67,7 @@ def sendConfirm_thread(email, token):
             msg.attach(part1)
         except AttributeError:
             pass
-        
+
     if mail_html:
         try:
             html = render_to_string(mail_html, {'link': link})
@@ -79,11 +79,19 @@ def sendConfirm_thread(email, token):
     if not msg.get_payload():
         raise EmailTemplateNotFound('No email template found')
 
-    server = SMTP(email_server, port)
-    server.starttls()
-    server.login(address, password)
-    server.sendmail(sender, email, msg.as_string())
-    server.quit()
+    email_backend  = validateAndGetField('EMAIL_BACKEND')
+
+    if email_backend and email_backend == 'django.core.mail.backends.console.Em$
+        msg = EmailMessage(subject, msg.as_string(), sender, [email])
+        if mail_html:
+            msg.content_subtype = "html"
+        msg.send()
+    else:
+        server = SMTP(email_server, port)
+        server.starttls()
+        server.login(address, password)
+        server.sendmail(sender, email, msg.as_string())
+        server.quit()
 
 
 def validateAndGetField(field, raise_error=True, default_type=str):
