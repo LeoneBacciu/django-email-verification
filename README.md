@@ -154,8 +154,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 in settings.py.  This will override any other email settings you provide.
 
 ## Custom salt for token generation
-Pass the key_salt keyword parameter to the sendconfirm function as follows:
+Pass the custom_salt keyword parameter to the sendconfirm function as follows:
 ```python
 sendConfirm(user, custom_salt=my_custom_key_salt)
 ```
-
