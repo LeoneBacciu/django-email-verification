@@ -86,7 +86,7 @@ def sendConfirm_thread(email, token):
 
     email_backend  = validateAndGetField('EMAIL_BACKEND')
 
-    if email_backend and email_backend == 'django.core.mail.backends.console.Em$
+    if email_backend and email_backend == 'django.core.mail.backends.console.EmailBackend'
         msg = EmailMessage(subject, msg.as_string(), sender, [email])
         if mail_html:
             msg.content_subtype = "html"
