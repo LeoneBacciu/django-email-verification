@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render
 
-from .Confirm import verifyToken
+from .confirm import verifyToken
 from .errors import NotAllFieldCompiled
 
 

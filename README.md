@@ -117,6 +117,18 @@ def myCreateView(request):
 ```
 `sendConfirm(user)` sets user's `EMAIL_ACTIVE_FIELD` to `False` and sends an email with the defined template (and the pseudo-random generated token) to the user.
 
+If you are using class based views, then it is necessary to call the superclass before calling the sendconfirm method.
+
+ie...
+```python
+Class myCreateView(CreateView):
+    def form_valid(self, form):
+       user = form.save()
+       returnVal = super(RegisterView, self).form_valid(form)
+       sendConfirm(user)
+       return returnVal
+```
+
 ## Token verification
 You have to include the urls in `urls.py`
 ```python
@@ -133,3 +145,16 @@ urlpatterns = [
 When a request arrives to `https.//mydomain.com/email/<base64 email>/<token>` the package verifies the token and:
 + if it corresponds to a pending token it renders the `EMAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
 + if it doesn't correspond it renders the `EMAIL_PAGE_TEMPLATE` passing `success=False`
+
+## Console backend for development
+If you want to use the console email backend provided by django, then define:
+```python
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
+in settings.py.  This will override any other email settings you provide.
+
+## Custom salt for token generation
+Pass the custom_salt keyword parameter to the sendconfirm function as follows:
+```python
+sendConfirm(user, custom_salt=my_custom_key_salt)
+```
