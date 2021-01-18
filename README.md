@@ -141,12 +141,15 @@ from django_email_verification import send_email
 def my_functional_view(request):
     ...
     user = get_user_model().objects.create(username=username, password=password, email=email)
+    user.is_active = False  # Example
     send_email(user)
     return render(...)
 ```
 
-`send_email(user)` sets user's `EMAIL_ACTIVE_FIELD` to `False` and sends an email with the defined template (and the
+`send_email(user)` sends an email with the defined template (and the
 pseudo-random generated token) to the user.
+
+> **_IMPORTANT:_** You have to manually set the user to inactive before sending the email.
 
 If you are using class based views, then it is necessary to call the superclass before calling the `send_confirm`
 method.
