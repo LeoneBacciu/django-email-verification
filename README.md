@@ -1,5 +1,12 @@
 # Django Email Verification
 
+![PyPI](https://img.shields.io/pypi/v/django-email-verification?style=flat-square&color=yellowgreen&logo=pypi)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-email-verification?style=flat-square&logo=python)
+![PyPI - Django Version](https://img.shields.io/pypi/djversions/django-email-verification?style=flat-square&logo=django)
+![PyPI - License](https://img.shields.io/pypi/l/django-email-verification?style=flat-square&logo=open-source-initiative)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/LeoneBacciu/django-email-verification/Upload%20Python%20Package?style=flat-square&logo=github-actions)
+
+
 ## Requirements
 
 + Python >= 3.8
@@ -7,7 +14,7 @@
 
 ## General concept
 
-![alt text](https://github.com/LeoneBacciu/django-email-verification/blob/master/emailFlow.png?raw=True "Flow")
+![Schema](https://github.com/LeoneBacciu/django-email-verification/blob/master/emailFlow.png?raw=True "Flow")
 
 ## Installation
 
