@@ -24,19 +24,20 @@ def send_email(user, **kwargs):
         except KeyError:
             token, expiry = default_token_generator.make_token(user)
 
-        t = Thread(target=send_email_thread, args=(user, token, expiry))
+        sender = _get_validated_field('EMAIL_FROM_ADDRESS')
+        domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
+        subject = _get_validated_field('EMAIL_MAIL_SUBJECT')
+        mail_plain = _get_validated_field('EMAIL_MAIL_PLAIN')
+        mail_html = _get_validated_field('EMAIL_MAIL_HTML')
+
+        args = (user, token, expiry, sender, domain, subject, mail_plain, mail_html)
+        t = Thread(target=send_email_thread, args=args)
         t.start()
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
 
 
-def send_email_thread(user, token, expiry):
-    sender = _get_validated_field('EMAIL_FROM_ADDRESS')
-    domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
-    subject = _get_validated_field('EMAIL_MAIL_SUBJECT')
-    mail_plain = _get_validated_field('EMAIL_MAIL_PLAIN')
-    mail_html = _get_validated_field('EMAIL_MAIL_HTML')
-
+def send_email_thread(user, token, expiry, sender, domain, subject, mail_plain, mail_html):
     domain += '/' if not domain.endswith('/') else ''
 
     from .views import verify
