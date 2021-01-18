@@ -12,4 +12,3 @@ def verify(request, email, email_token):
         return render(request, template, {'success': success, 'user': user, 'request': request})
     except AttributeError:
         raise NotAllFieldCompiled('EMAIL_PAGE_TEMPLATE field not found')
-
