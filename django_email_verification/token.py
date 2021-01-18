@@ -88,7 +88,7 @@ class EmailVerificationTokenGenerator:
             self._make_hash_value(user, timestamp),
             secret=self.secret,
         ).hexdigest()
-        return "%s-%s" % (ts_b36, hash_string)
+        return "%s-%s" % (ts_b36, hash_string), datetime.fromtimestamp(timestamp + settings.EMAIL_TOKEN_LIFE)
 
     @staticmethod
     def _make_hash_value(user, timestamp):

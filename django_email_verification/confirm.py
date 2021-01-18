@@ -28,16 +28,16 @@ def sendConfirm(user, **kwargs):
         try:
             token = kwargs['token']
         except KeyError:
-            token = default_token_generator.make_token(user)
+            token, expiry = default_token_generator.make_token(user)
 
         email = urlsafe_b64encode(str(user.email).encode('utf-8'))
-        t = Thread(target=sendConfirm_thread, args=(user.email, f'{email.decode("utf-8")}/{token}'))
+        t = Thread(target=sendConfirm_thread, args=(user.email, f'{email.decode("utf-8")}/{token}', expiry))
         t.start()
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
 
 
-def sendConfirm_thread(email, token):
+def sendConfirm_thread(email, token, expiry):
     email_server = _get_validated_field('EMAIL_SERVER')
     sender = _get_validated_field('EMAIL_FROM_ADDRESS')
     domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
@@ -66,9 +66,11 @@ def sendConfirm_thread(email, token):
             addr = str(v[0][0][0])
             link = domain + addr[0: addr.index('%')] + token
 
+    context = {'link': link, 'expiry': expiry}
+
     if mail_plain:
         try:
-            text = render_to_string(mail_plain, {'link': link})
+            text = render_to_string(mail_plain, context)
             part1 = MIMEText(text, 'plain')
             msg.attach(part1)
         except AttributeError:
@@ -76,7 +78,7 @@ def sendConfirm_thread(email, token):
 
     if mail_html:
         try:
-            html = render_to_string(mail_html, {'link': link})
+            html = render_to_string(mail_html, context)
             part2 = MIMEText(html, 'html')
             msg.attach(part2)
         except AttributeError:

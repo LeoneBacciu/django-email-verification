@@ -72,6 +72,7 @@ The `EMAIL_MAIL_HTML` should look like this (`{{ link }}` is passed during the r
     <body>
         <h1>You are almost there!</h1><br>
         <h2>Please click <a href="{{ link }}">here</a> to confirm your account</h2>
+        <h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
     </body>
 </html>
 ```
@@ -81,6 +82,7 @@ The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}` is passed during the 
 You are almost there!
 Please click the following link to confirm your account
 {{ link }}
+The token expires on {{ expiry|time:"TIME_FORMAT" }}
 ```
 
 The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}` is boolean and passed during the rendering):
