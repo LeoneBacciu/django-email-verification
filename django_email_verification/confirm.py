@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from threading import Thread
+from typing import Callable
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -17,9 +18,7 @@ from .token import default_token_generator
 
 
 def send_email(user, **kwargs):
-    active_field = _get_validated_field('EMAIL_ACTIVE_FIELD')
     try:
-        setattr(user, active_field, False)
         user.save()
 
         if kwargs.get('custom_salt'):
@@ -122,9 +121,8 @@ def verify_token(email, email_token):
         for user in users:
             valid = default_token_generator.check_token(user, email_token)
             if valid:
-                active_field = _get_validated_field('EMAIL_ACTIVE_FIELD')
-                setattr(user, active_field, True)
-                user.last_login = timezone.now()
+                callback = _get_validated_field('EMAIL_VERIFIED_CALLBACK', default_type=Callable)
+                callback(user)
                 user.save()
                 return valid
     except b64Error:
