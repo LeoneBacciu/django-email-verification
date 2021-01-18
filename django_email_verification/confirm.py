@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import get_resolver
+from django.utils import timezone
 
 from .errors import InvalidUserModel, NotAllFieldCompiled
 from .token import default_token_generator
@@ -82,6 +83,7 @@ def verify_token(email, email_token):
             if valid:
                 callback = _get_validated_field('EMAIL_VERIFIED_CALLBACK', default_type=Callable)
                 callback(user)
+                user.last_login = timezone.now()
                 user.save()
                 return valid
     except b64Error:
