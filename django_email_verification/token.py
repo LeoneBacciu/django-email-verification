@@ -70,7 +70,7 @@ class EmailVerificationTokenGenerator:
 
         if not constant_time_compare(self._make_token_with_timestamp(user, ts), token):
             if not constant_time_compare(
-                    self._make_token_with_timestamp(user, ts),
+                    self._make_token_with_timestamp(user, ts)[0],
                     token,
             ):
                 return False
