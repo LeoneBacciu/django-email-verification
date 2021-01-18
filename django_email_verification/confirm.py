@@ -85,7 +85,7 @@ def verify_token(email, email_token):
                 callback(user)
                 user.last_login = timezone.now()
                 user.save()
-                return valid
+                return valid, user
     except b64Error:
         pass
-    return False
+    return False, None

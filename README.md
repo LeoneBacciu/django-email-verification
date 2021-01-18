@@ -6,7 +6,6 @@
 ![PyPI - License](https://img.shields.io/pypi/l/django-email-verification?style=flat-square&logo=open-source-initiative)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/LeoneBacciu/django-email-verification/Upload%20Python%20Package?style=flat-square&logo=github-actions)
 
-
 ## Requirements
 
 + Python >= 3.8
@@ -82,8 +81,8 @@ official [documentation](https://docs.djangoproject.com/en/3.1/topics/email/).
 
 ## Templates examples
 
-The `EMAIL_MAIL_HTML` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are passed during the
-rendering):
+The `EMAIL_MAIL_HTML` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
+passed during the rendering):
 
 ```html
 <!DOCTYPE html>
@@ -100,8 +99,8 @@ rendering):
 </html>
 ```
 
-The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are passed during the
-rendering):
+The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
+passed during the rendering):
 
 ```text
 You are almost there, {{ user.username }}!
@@ -109,7 +108,8 @@ Please click the following link to confirm your account: {{ link }}
 The token expires on {{ expiry|time:"TIME_FORMAT" }}
 ```
 
-The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}` is boolean and passed during the rendering):
+The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}`(`bool`), `{{ user }}`(`Model`)
+and `{{ request }}`(`WSGIRequest`) are passed during the rendering):
 
 ```html
 <!DOCTYPE html>
@@ -120,7 +120,7 @@ The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}` is boolean and 
 </head>
 <body>
 {% if success %}
-You have confirmed your account!
+{{ user.username }}, your account is confirmed!
 {% else %}
 Error, invalid token!
 {% endif %}
@@ -148,11 +148,13 @@ def my_functional_view(request):
 `send_email(user)` sets user's `EMAIL_ACTIVE_FIELD` to `False` and sends an email with the defined template (and the
 pseudo-random generated token) to the user.
 
-If you are using class based views, then it is necessary to call the superclass before calling the `send_confirm` method.
+If you are using class based views, then it is necessary to call the superclass before calling the `send_confirm`
+method.
 
 ```python
 from django.views.generic.edit import FormView
 from django_email_verification import send_email
+
 
 class MyClassView(FormView):
 
