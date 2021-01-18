@@ -27,19 +27,19 @@ def send_email(user, **kwargs):
         except KeyError:
             token, expiry = default_token_generator.make_token(user)
 
-        email = urlsafe_b64encode(str(user.email).encode('utf-8'))
-        t = Thread(target=send_email_thread, args=(user.email, f'{email.decode("utf-8")}/{token}', expiry))
+        t = Thread(target=send_email_thread, args=(user, token, expiry))
         t.start()
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
 
 
-def send_email_thread(email, token, expiry):
+def send_email_thread(user, token, expiry):
     sender = _get_validated_field('EMAIL_FROM_ADDRESS')
     domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
     subject = _get_validated_field('EMAIL_MAIL_SUBJECT')
     mail_plain = _get_validated_field('EMAIL_MAIL_PLAIN')
     mail_html = _get_validated_field('EMAIL_MAIL_HTML')
+    path = f'{urlsafe_b64encode(str(user.email).encode()).decode()}/{token}'
 
     domain += '/' if not domain.endswith('/') else ''
 
@@ -48,15 +48,15 @@ def send_email_thread(email, token, expiry):
     for k, v in get_resolver(None).reverse_dict.items():
         if k is verify and v[0][0][1][0]:
             addr = str(v[0][0][0])
-            link = domain + addr[0: addr.index('%')] + token
+            link = domain + addr[0: addr.index('%')] + path
 
-    context = {'link': link, 'expiry': expiry}
+    context = {'link': link, 'expiry': expiry, 'user': user}
 
     text = render_to_string(mail_plain, context)
 
     html = render_to_string(mail_html, context)
 
-    msg = EmailMultiAlternatives(subject, text, sender, [email])
+    msg = EmailMultiAlternatives(subject, text, sender, [user.email])
     msg.attach_alternative(html, 'text/html')
     msg.send()
 

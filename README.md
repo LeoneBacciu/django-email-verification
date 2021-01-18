@@ -82,7 +82,7 @@ official [documentation](https://docs.djangoproject.com/en/3.1/topics/email/).
 
 ## Templates examples
 
-The `EMAIL_MAIL_HTML` should look like this (`{{ link }}`(`str`) and `{{ expiry }}`(`datetime`) are passed during the
+The `EMAIL_MAIL_HTML` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are passed during the
 rendering):
 
 ```html
@@ -93,18 +93,18 @@ rendering):
     <title>Email Confirmation</title>
 </head>
 <body>
-<h1>You are almost there!</h1><br>
+<h1>You are almost there, {{ user.username }}!</h1><br>
 <h2>Please click <a href="{{ link }}">here</a> to confirm your account</h2>
 <h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
 </body>
 </html>
 ```
 
-The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}`(`str`) and `{{ expiry }}`(`datetime`) are passed during the
+The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are passed during the
 rendering):
 
 ```text
-You are almost there!
+You are almost there, {{ user.username }}!
 Please click the following link to confirm your account: {{ link }}
 The token expires on {{ expiry|time:"TIME_FORMAT" }}
 ```
