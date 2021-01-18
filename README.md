@@ -39,6 +39,7 @@ EMAIL_PASSWORD = 'mYC00lP4ssw0rd' # os.environ['password_key'] suggested
 EMAIL_MAIL_SUBJECT = 'Confirm your email'
 EMAIL_MAIL_HTML = 'mail_body.html'
 EMAIL_MAIL_PLAIN = 'mail_body.txt'
+EMAIL_TOKEN_LIFE = 60*60
 EMAIL_PAGE_TEMPLATE = 'confirm_template.html'
 EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
 ```
@@ -53,6 +54,7 @@ In detail:
     * `SUBJECT`: the mail default subject (needed)
     * `HTML`: the mail body in form of html (not needed)
     * `PLAIN`: the mail body in form of .txt file (needed if `HTML` is not defined)
++ `EMAIL_TOKEN_LIFE`: the lifespan of the token (in seconds)
 + `EMAIL_PAGE_TEMPLATE`: the template of the success/error view
 + `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain)
 

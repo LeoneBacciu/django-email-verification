@@ -7,13 +7,13 @@ from threading import Thread
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.urls import get_resolver
 from django.utils import timezone
 
 from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
+from .token import default_token_generator
 
 
 def sendConfirm(user, **kwargs):
