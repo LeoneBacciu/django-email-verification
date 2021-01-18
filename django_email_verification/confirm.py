@@ -11,7 +11,6 @@ from django.contrib.auth import get_user_model
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.urls import get_resolver
-from django.utils import timezone
 
 from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
 from .token import default_token_generator

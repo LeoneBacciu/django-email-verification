@@ -33,7 +33,11 @@ INSTALLED_APPS = [
 You have to add these parameters to the settings, you have to include all of them except the last one:
 
 ```python
-EMAIL_ACTIVE_FIELD = 'is_active'
+def verified_callback(user):
+    user.is_active = True
+
+
+EMAIL_VERIFIED_CALLBACK = verified_callback
 EMAIL_SERVER = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_ADDRESS = 'mymail@gmail.com'
@@ -49,11 +53,12 @@ EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
 
 In detail:
 
-+ `EMAIL_ACTIVE_FIELD`: the user model field which will be set to `True` once the email is confirmed
++ `EMAIL_VERIFIED_CALLBACK`: the function that will be called when the user successfully verifies the email. Takes the
+  user object as argument
 + `EMAIL_SERVER`: your mail provider's server (e.g. `'smtp.gmail.com'` for gmail)
 + `EMAIL_PORT`: your mail provider's server port (e.g. `587` for gmail)
 + `EMAIL_ADDRESS`: your email address
-+ `EMAIL_FROM_ADDRESS`: this can be the same as email_address or an alias address if required.
++ `EMAIL_FROM_ADDRESS`: this can be the same as email_address or an alias address if required
 + `EMAIL_PASSWORD`: your email address' password
 + `EMAIL_MAIL_`:
     * `SUBJECT`: the mail default subject (needed)
