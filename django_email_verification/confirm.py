@@ -17,7 +17,7 @@ from .token import default_token_generator
 
 
 def sendConfirm(user, **kwargs):
-    active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
+    active_field = _get_validated_field('EMAIL_ACTIVE_FIELD')
     try:
         setattr(user, active_field, False)
         user.save()
@@ -38,15 +38,15 @@ def sendConfirm(user, **kwargs):
 
 
 def sendConfirm_thread(email, token):
-    email_server = validateAndGetField('EMAIL_SERVER')
-    sender = validateAndGetField('EMAIL_FROM_ADDRESS')
-    domain = validateAndGetField('EMAIL_PAGE_DOMAIN')
-    subject = validateAndGetField('EMAIL_MAIL_SUBJECT')
-    address = validateAndGetField('EMAIL_ADDRESS')
-    port = validateAndGetField('EMAIL_PORT', default_type=int)
-    password = validateAndGetField('EMAIL_PASSWORD')
-    mail_plain = validateAndGetField('EMAIL_MAIL_PLAIN', raise_error=False)
-    mail_html = validateAndGetField('EMAIL_MAIL_HTML', raise_error=False)
+    email_server = _get_validated_field('EMAIL_SERVER')
+    sender = _get_validated_field('EMAIL_FROM_ADDRESS')
+    domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
+    subject = _get_validated_field('EMAIL_MAIL_SUBJECT')
+    address = _get_validated_field('EMAIL_ADDRESS')
+    port = _get_validated_field('EMAIL_PORT', default_type=int)
+    password = _get_validated_field('EMAIL_PASSWORD')
+    mail_plain = _get_validated_field('EMAIL_MAIL_PLAIN', raise_error=False)
+    mail_html = _get_validated_field('EMAIL_MAIL_HTML', raise_error=False)
 
     if not (mail_plain or mail_html):  # Validation for mail_plain and mail_html as both of them have raise_error=False
         raise NotAllFieldCompiled(
@@ -85,7 +85,7 @@ def sendConfirm_thread(email, token):
     if not msg.get_payload():
         raise EmailTemplateNotFound('No email template found')
 
-    email_backend = validateAndGetField('EMAIL_BACKEND')
+    email_backend = _get_validated_field('EMAIL_BACKEND')
 
     if email_backend and email_backend == 'django.core.mail.backends.console.EmailBackend':
         msg = EmailMessage(subject, msg.as_string(), sender, [email])
@@ -100,7 +100,9 @@ def sendConfirm_thread(email, token):
         server.quit()
 
 
-def validateAndGetField(field, raise_error=True, default_type=str):
+def _get_validated_field(field, raise_error=True, default_type=None):
+    if default_type is None:
+        default_type = str
     try:
         d = getattr(settings, field)
         if d == "" or d is None or not isinstance(d, default_type):
@@ -118,7 +120,7 @@ def verifyToken(email, email_token):
         for user in users:
             valid = default_token_generator.check_token(user, email_token)
             if valid:
-                active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
+                active_field = _get_validated_field('EMAIL_ACTIVE_FIELD')
                 setattr(user, active_field, True)
                 user.last_login = timezone.now()
                 user.save()
