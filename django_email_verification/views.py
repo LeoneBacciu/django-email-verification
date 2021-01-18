@@ -5,10 +5,10 @@ from .confirm import verify_token
 from .errors import NotAllFieldCompiled
 
 
-def verify(request, email, email_token):
+def verify(request, token):
     try:
         template = settings.EMAIL_PAGE_TEMPLATE
-        success, user = verify_token(email, email_token)
+        success, user = verify_token(token)
         return render(request, template, {'success': success, 'user': user, 'request': request})
     except AttributeError:
         raise NotAllFieldCompiled('EMAIL_PAGE_TEMPLATE field not found')

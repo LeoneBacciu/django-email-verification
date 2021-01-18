@@ -1,10 +1,7 @@
-from base64 import urlsafe_b64decode, urlsafe_b64encode
-from binascii import Error as b64Error
 from threading import Thread
 from typing import Callable
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import get_resolver
@@ -39,7 +36,6 @@ def send_email_thread(user, token, expiry):
     subject = _get_validated_field('EMAIL_MAIL_SUBJECT')
     mail_plain = _get_validated_field('EMAIL_MAIL_PLAIN')
     mail_html = _get_validated_field('EMAIL_MAIL_HTML')
-    path = f'{urlsafe_b64encode(str(user.email).encode()).decode()}/{token}'
 
     domain += '/' if not domain.endswith('/') else ''
 
@@ -48,7 +44,7 @@ def send_email_thread(user, token, expiry):
     for k, v in get_resolver(None).reverse_dict.items():
         if k is verify and v[0][0][1][0]:
             addr = str(v[0][0][0])
-            link = domain + addr[0: addr.index('%')] + path
+            link = domain + addr[0: addr.index('%')] + token
 
     context = {'link': link, 'expiry': expiry, 'user': user}
 
@@ -75,17 +71,12 @@ def _get_validated_field(field, raise_error=True, default_type=None):
         return None
 
 
-def verify_token(email, email_token):
-    try:
-        users = get_user_model().objects.filter(email=urlsafe_b64decode(email).decode("utf-8"))
-        for user in users:
-            valid = default_token_generator.check_token(user, email_token)
-            if valid:
-                callback = _get_validated_field('EMAIL_VERIFIED_CALLBACK', default_type=Callable)
-                callback(user)
-                user.last_login = timezone.now()
-                user.save()
-                return valid, user
-    except b64Error:
-        pass
+def verify_token(token):
+    valid, user = default_token_generator.check_token(token)
+    if valid:
+        callback = _get_validated_field('EMAIL_VERIFIED_CALLBACK', default_type=Callable)
+        callback(user)
+        user.last_login = timezone.now()
+        user.save()
+        return valid, user
     return False, None
