@@ -1,9 +1,9 @@
-# Django email validator
+# Django Email Verification
 
 ## Requirements
 
 + Python >= 3.8
-+ Django 3.0.7
++ Django >= 3.1
 
 ## General concept
 
@@ -38,50 +38,52 @@ def verified_callback(user):
 
 
 EMAIL_VERIFIED_CALLBACK = verified_callback
-EMAIL_SERVER = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_ADDRESS = 'mymail@gmail.com'
 EMAIL_FROM_ADDRESS = 'noreply@aliasaddress.com'
-EMAIL_PASSWORD = 'mYC00lP4ssw0rd'  # os.environ['password_key'] suggested
 EMAIL_MAIL_SUBJECT = 'Confirm your email'
 EMAIL_MAIL_HTML = 'mail_body.html'
 EMAIL_MAIL_PLAIN = 'mail_body.txt'
 EMAIL_TOKEN_LIFE = 60 * 60
 EMAIL_PAGE_TEMPLATE = 'confirm_template.html'
 EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
+
+# For Django Email Backend
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'mymail@gmail.com'
+EMAIL_HOST_PASSWORD = 'mYC00lP4ssw0rd'  # os.environ['password_key'] suggested
+EMAIL_USE_TLS = True
+
+
 ```
 
 In detail:
 
 + `EMAIL_VERIFIED_CALLBACK`: the function that will be called when the user successfully verifies the email. Takes the
-  user object as argument
-+ `EMAIL_SERVER`: your mail provider's server (e.g. `'smtp.gmail.com'` for gmail)
-+ `EMAIL_PORT`: your mail provider's server port (e.g. `587` for gmail)
-+ `EMAIL_ADDRESS`: your email address
-+ `EMAIL_FROM_ADDRESS`: this can be the same as email_address or an alias address if required
-+ `EMAIL_PASSWORD`: your email address' password
+  user object as argument.
++ `EMAIL_FROM_ADDRESS`: this can be the same as `EMAIL_HOST_USER` or an alias address if required.
 + `EMAIL_MAIL_`:
-    * `SUBJECT`: the mail default subject (needed)
-    * `HTML`: the mail body in form of html (not needed)
-    * `PLAIN`: the mail body in form of .txt file (needed if `HTML` is not defined)
-+ `EMAIL_TOKEN_LIFE`: the lifespan of the token (in seconds)
-+ `EMAIL_PAGE_TEMPLATE`: the template of the success/error view
-+ `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain)
+    * `SUBJECT`: the mail default subject.
+    * `HTML`: the mail body template in form of html.
+    * `PLAIN`: the mail body template in form of .txt file.
++ `EMAIL_TOKEN_LIFE`: the lifespan of the email link (in seconds).
++ `EMAIL_PAGE_TEMPLATE`: the template of the success/error view.
++ `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain).
+
+For the Django Email Backend fields look at the
+official [documentation](https://docs.djangoproject.com/en/3.1/topics/email/).
 
 ## Templates examples
 
-The `EMAIL_MAIL_HTML` should look like this (`{{ link }}` is passed during the rendering):
+The `EMAIL_MAIL_HTML` should look like this (`{{ link }}`(`str`) and `{{ expiry }}`(`datetime`) are passed during the
+rendering):
 
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <style>
-        h1 {
-            color: blue;
-        }
-    </style>
+    <title>Email Confirmation</title>
 </head>
 <body>
 <h1>You are almost there!</h1><br>
@@ -91,12 +93,12 @@ The `EMAIL_MAIL_HTML` should look like this (`{{ link }}` is passed during the r
 </html>
 ```
 
-The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}` is passed during the rendering):
+The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}`(`str`) and `{{ expiry }}`(`datetime`) are passed during the
+rendering):
 
 ```text
 You are almost there!
-Please click the following link to confirm your account
-{{ link }}
+Please click the following link to confirm your account: {{ link }}
 The token expires on {{ expiry|time:"TIME_FORMAT" }}
 ```
 
@@ -108,11 +110,6 @@ The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}` is boolean and 
 <head>
     <meta charset="UTF-8">
     <title>Confirmation</title>
-    <style>
-        body {
-            color: blue;
-        }
-    </style>
 </head>
 <body>
 {% if success %}
@@ -134,7 +131,7 @@ from django.contrib.auth import get_user_model
 from django_email_verification import send_email
 
 
-def myCreateView(request):
+def my_functional_view(request):
     ...
     user = get_user_model().objects.create(username=username, password=password, email=email)
     send_email(user)
@@ -144,14 +141,17 @@ def myCreateView(request):
 `send_email(user)` sets user's `EMAIL_ACTIVE_FIELD` to `False` and sends an email with the defined template (and the
 pseudo-random generated token) to the user.
 
-If you are using class based views, then it is necessary to call the superclass before calling the sendconfirm method.
+If you are using class based views, then it is necessary to call the superclass before calling the `send_confirm` method.
 
 ```python
-class myCreateView(CreateView):
+from django.views.generic.edit import FormView
+from django_email_verification import send_email
+
+class MyClassView(FormView):
 
     def form_valid(self, form):
         user = form.save()
-        returnVal = super(RegisterView, self).form_valid(form)
+        returnVal = super(MyClassView, self).form_valid(form)
         send_email(user)
         return returnVal
 ```
@@ -172,7 +172,7 @@ urlpatterns = [
 ]
 ```
 
-When a request arrives to `https.//mydomain.com/email/<base64 email>/<token>` the package verifies the token and:
+When a request arrives to `https.//mydomain.com/email/<base64-email>/<token>` the package verifies the token and:
 
 + if it corresponds to a pending token it renders the `EMAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
 + if it doesn't correspond it renders the `EMAIL_PAGE_TEMPLATE` passing `success=False`
@@ -185,11 +185,11 @@ If you want to use the console email backend provided by django, then define:
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ```
 
-in settings.py. This will override any other email settings you provide.
+You can use all the django email backends and also your custom one.
 
 ## Custom salt for token generation
 
-Pass the custom_salt keyword parameter to the sendconfirm function as follows:
+Pass the custom_salt keyword parameter to the `send_confirm` method as follows:
 
 ```python
 send_email(user, custom_salt=my_custom_key_salt)
