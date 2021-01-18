@@ -1,18 +1,15 @@
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from binascii import Error as b64Error
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from smtplib import SMTP
 from threading import Thread
 from typing import Callable
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import get_resolver
 
-from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
+from .errors import InvalidUserModel, NotAllFieldCompiled
 from .token import default_token_generator
 
 
@@ -25,6 +22,7 @@ def send_email(user, **kwargs):
 
         try:
             token = kwargs['token']
+            expiry = kwargs['expiry']
         except KeyError:
             token, expiry = default_token_generator.make_token(user)
 
@@ -36,26 +34,13 @@ def send_email(user, **kwargs):
 
 
 def send_email_thread(email, token, expiry):
-    email_server = _get_validated_field('EMAIL_SERVER')
     sender = _get_validated_field('EMAIL_FROM_ADDRESS')
     domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
     subject = _get_validated_field('EMAIL_MAIL_SUBJECT')
-    address = _get_validated_field('EMAIL_ADDRESS')
-    port = _get_validated_field('EMAIL_PORT', default_type=int)
-    password = _get_validated_field('EMAIL_PASSWORD')
-    mail_plain = _get_validated_field('EMAIL_MAIL_PLAIN', raise_error=False)
-    mail_html = _get_validated_field('EMAIL_MAIL_HTML', raise_error=False)
-
-    if not (mail_plain or mail_html):  # Validation for mail_plain and mail_html as both of them have raise_error=False
-        raise NotAllFieldCompiled(
-            f"Both EMAIL_MAIL_PLAIN and EMAIL_MAIL_HTML missing from settings.py, at least one of them is required.")
+    mail_plain = _get_validated_field('EMAIL_MAIL_PLAIN')
+    mail_html = _get_validated_field('EMAIL_MAIL_HTML')
 
     domain += '/' if not domain.endswith('/') else ''
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = email
 
     from .views import verify
     link = ''
@@ -66,38 +51,13 @@ def send_email_thread(email, token, expiry):
 
     context = {'link': link, 'expiry': expiry}
 
-    if mail_plain:
-        try:
-            text = render_to_string(mail_plain, context)
-            part1 = MIMEText(text, 'plain')
-            msg.attach(part1)
-        except AttributeError:
-            pass
+    text = render_to_string(mail_plain, context)
 
-    if mail_html:
-        try:
-            html = render_to_string(mail_html, context)
-            part2 = MIMEText(html, 'html')
-            msg.attach(part2)
-        except AttributeError:
-            pass
+    html = render_to_string(mail_html, context)
 
-    if not msg.get_payload():
-        raise EmailTemplateNotFound('No email template found')
-
-    email_backend = _get_validated_field('EMAIL_BACKEND')
-
-    if email_backend and email_backend == 'django.core.mail.backends.console.EmailBackend':
-        msg = EmailMessage(subject, msg.as_string(), sender, [email])
-        if mail_html:
-            msg.content_subtype = "html"
-        msg.send()
-    else:
-        server = SMTP(email_server, port)
-        server.starttls()
-        server.login(address, password)
-        server.sendmail(sender, email, msg.as_string())
-        server.quit()
+    msg = EmailMultiAlternatives(subject, text, sender, [email])
+    msg.attach_alternative(html, 'text/html')
+    msg.send()
 
 
 def _get_validated_field(field, raise_error=True, default_type=None):
