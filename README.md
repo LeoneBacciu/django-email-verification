@@ -1,10 +1,10 @@
 # Django Email Verification
 
-![PyPI](https://img.shields.io/pypi/v/django-email-verification?style=flat-square&color=yellowgreen&logo=pypi)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-email-verification?style=flat-square&logo=python)
-![PyPI - Django Version](https://img.shields.io/pypi/djversions/django-email-verification?style=flat-square&logo=django)
-![PyPI - License](https://img.shields.io/pypi/l/django-email-verification?style=flat-square&logo=open-source-initiative)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/LeoneBacciu/django-email-verification/Upload%20Python%20Package?style=flat-square&logo=github-actions)
+[![PyPI](https://img.shields.io/pypi/v/django-email-verification?style=flat-square&color=yellowgreen&logo=pypi)](https://pypi.org/project/django-email-verification/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-email-verification?style=flat-square&logo=python)](https://www.python.org/downloads/release/python-380/)
+[![PyPI - Django Version](https://img.shields.io/pypi/djversions/django-email-verification?style=flat-square&logo=django)](https://docs.djangoproject.com/en/3.1/releases/3.1/)
+[![PyPI - License](https://img.shields.io/pypi/l/django-email-verification?style=flat-square&logo=open-source-initiative)](https://github.com/LeoneBacciu/django-email-verification/blob/version-0.1.0/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/LeoneBacciu/django-email-verification/Upload%20Python%20Package?style=flat-square&logo=github-actions)](https://github.com/LeoneBacciu/django-email-verification/actions)
 
 ## Requirements
 
