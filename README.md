@@ -1,11 +1,12 @@
 # Django email validator
 
-
 ## Requirements
+
 + Python >= 3.8
 + Django 3.0.7
 
 ## General concept
+
 ![alt text](https://github.com/LeoneBacciu/django-email-verification/blob/master/emailFlow.png?raw=True "Flow")
 
 ## Installation
@@ -23,27 +24,31 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     ...
-    'django_email_verification', # you have to add this
+    'django_email_verification',  # you have to add this
 ]
 ```
 
 ## Settings parameters
+
 You have to add these parameters to the settings, you have to include all of them except the last one:
+
 ```python
 EMAIL_ACTIVE_FIELD = 'is_active'
 EMAIL_SERVER = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_ADDRESS = 'mymail@gmail.com'
 EMAIL_FROM_ADDRESS = 'noreply@aliasaddress.com'
-EMAIL_PASSWORD = 'mYC00lP4ssw0rd' # os.environ['password_key'] suggested
+EMAIL_PASSWORD = 'mYC00lP4ssw0rd'  # os.environ['password_key'] suggested
 EMAIL_MAIL_SUBJECT = 'Confirm your email'
 EMAIL_MAIL_HTML = 'mail_body.html'
 EMAIL_MAIL_PLAIN = 'mail_body.txt'
-EMAIL_TOKEN_LIFE = 60*60
+EMAIL_TOKEN_LIFE = 60 * 60
 EMAIL_PAGE_TEMPLATE = 'confirm_template.html'
 EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
 ```
+
 In detail:
+
 + `EMAIL_ACTIVE_FIELD`: the user model field which will be set to `True` once the email is confirmed
 + `EMAIL_SERVER`: your mail provider's server (e.g. `'smtp.gmail.com'` for gmail)
 + `EMAIL_PORT`: your mail provider's server port (e.g. `587` for gmail)
@@ -59,25 +64,30 @@ In detail:
 + `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain)
 
 ## Templates examples
+
 The `EMAIL_MAIL_HTML` should look like this (`{{ link }}` is passed during the rendering):
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <style>
-        h1{ color: blue; }
+        h1 {
+            color: blue;
+        }
     </style>
 </head>
-    <body>
-        <h1>You are almost there!</h1><br>
-        <h2>Please click <a href="{{ link }}">here</a> to confirm your account</h2>
-        <h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
-    </body>
+<body>
+<h1>You are almost there!</h1><br>
+<h2>Please click <a href="{{ link }}">here</a> to confirm your account</h2>
+<h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
+</body>
 </html>
 ```
 
 The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}` is passed during the rendering):
+
 ```text
 You are almost there!
 Please click the following link to confirm your account
@@ -86,6 +96,7 @@ The token expires on {{ expiry|time:"TIME_FORMAT" }}
 ```
 
 The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}` is boolean and passed during the rendering):
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -93,72 +104,88 @@ The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}` is boolean and 
     <meta charset="UTF-8">
     <title>Confirmation</title>
     <style>
-        body{ color: blue; }
+        body {
+            color: blue;
+        }
     </style>
 </head>
 <body>
-    {% if success %}
-        You have confirmed your account!
-    {% else %}
-        Error, invalid token!
-    {% endif %}
+{% if success %}
+You have confirmed your account!
+{% else %}
+Error, invalid token!
+{% endif %}
 </body>
 </html>
 ```
 
 ## Email sending
+
 After you have created the user you can send the confirm email
+
 ```python
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
-from django_email_verification import sendConfirm
+from django_email_verification import send_email
+
 
 def myCreateView(request):
     ...
     user = get_user_model().objects.create(username=username, password=password, email=email)
-    sendConfirm(user)
+    send_email(user)
     return render(...)
 ```
-`sendConfirm(user)` sets user's `EMAIL_ACTIVE_FIELD` to `False` and sends an email with the defined template (and the pseudo-random generated token) to the user.
+
+`send_email(user)` sets user's `EMAIL_ACTIVE_FIELD` to `False` and sends an email with the defined template (and the
+pseudo-random generated token) to the user.
 
 If you are using class based views, then it is necessary to call the superclass before calling the sendconfirm method.
 
-ie...
 ```python
-Class myCreateView(CreateView):
+class myCreateView(CreateView):
+
     def form_valid(self, form):
-       user = form.save()
-       returnVal = super(RegisterView, self).form_valid(form)
-       sendConfirm(user)
-       return returnVal
+        user = form.save()
+        returnVal = super(RegisterView, self).form_valid(form)
+        send_email(user)
+        return returnVal
 ```
 
 ## Token verification
+
 You have to include the urls in `urls.py`
+
 ```python
 from django.contrib import admin
 from django.urls import path, include
-from django_email_verification import urls as mail_urls
+from django_email_verification import urls as email_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     ...
-    path('email/', include(mail_urls)),
+    path('email/', include(email_urls)),
 ]
 ```
+
 When a request arrives to `https.//mydomain.com/email/<base64 email>/<token>` the package verifies the token and:
+
 + if it corresponds to a pending token it renders the `EMAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
 + if it doesn't correspond it renders the `EMAIL_PAGE_TEMPLATE` passing `success=False`
 
 ## Console backend for development
+
 If you want to use the console email backend provided by django, then define:
+
 ```python
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ```
-in settings.py.  This will override any other email settings you provide.
+
+in settings.py. This will override any other email settings you provide.
 
 ## Custom salt for token generation
+
 Pass the custom_salt keyword parameter to the sendconfirm function as follows:
+
 ```python
-sendConfirm(user, custom_salt=my_custom_key_salt)
+send_email(user, custom_salt=my_custom_key_salt)
 ```

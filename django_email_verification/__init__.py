@@ -1,1 +1,1 @@
-from .confirm import sendConfirm, verifyToken
+from .confirm import send_email, verify_token

@@ -16,7 +16,7 @@ from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
 from .token import default_token_generator
 
 
-def sendConfirm(user, **kwargs):
+def send_email(user, **kwargs):
     active_field = _get_validated_field('EMAIL_ACTIVE_FIELD')
     try:
         setattr(user, active_field, False)
@@ -31,13 +31,13 @@ def sendConfirm(user, **kwargs):
             token, expiry = default_token_generator.make_token(user)
 
         email = urlsafe_b64encode(str(user.email).encode('utf-8'))
-        t = Thread(target=sendConfirm_thread, args=(user.email, f'{email.decode("utf-8")}/{token}', expiry))
+        t = Thread(target=send_email_thread, args=(user.email, f'{email.decode("utf-8")}/{token}', expiry))
         t.start()
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
 
 
-def sendConfirm_thread(email, token, expiry):
+def send_email_thread(email, token, expiry):
     email_server = _get_validated_field('EMAIL_SERVER')
     sender = _get_validated_field('EMAIL_FROM_ADDRESS')
     domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
@@ -116,7 +116,7 @@ def _get_validated_field(field, raise_error=True, default_type=None):
         return None
 
 
-def verifyToken(email, email_token):
+def verify_token(email, email_token):
     try:
         users = get_user_model().objects.filter(email=urlsafe_b64decode(email).decode("utf-8"))
         for user in users:
