@@ -7,6 +7,10 @@
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/LeoneBacciu/django-email-verification/Upload%20Python%20Package?logo=github-actions)](https://github.com/LeoneBacciu/django-email-verification/actions)
 [![codecov](https://codecov.io/gh/LeoneBacciu/django-email-verification/branch/master/graph/badge.svg?token=97DDVD3MGW)](https://codecov.io/gh/LeoneBacciu/django-email-verification)
 
+<div style="text-align: center; padding: 25px 0">
+  <img src="https://github.com/LeoneBacciu/django-email-verification/blob/master/icon.png?raw=True" width="300px" alt="icon">
+</div>
+
 ## Requirements
 
 + Python >= 3.8
