@@ -18,7 +18,7 @@
 
 ## General concept
 
-![Schema](https://github.com/LeoneBacciu/django-email-verification/blob/master/emailFlow.png?raw=True "Flow")
+![Schema](https://github.com/LeoneBacciu/django-email-verification/blob/master/email_flow.png?raw=True "Flow")
 
 ## Installation
 
