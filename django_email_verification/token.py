@@ -45,21 +45,23 @@ class EmailVerificationTokenGenerator:
     algorithm = None
     secret = settings.SECRET_KEY
 
-    def make_token(self, user):
+    def make_token(self, user, expiry=None):
         """
         Return a token that can be used once to do a password reset
         for the given user.
 
         Args:
             user (Model): the user
+            expiry (datetime): optional forced expiry date
 
         Returns:
              (tuple): tuple containing:
                 token (str): the token
                 expiry (datetime): the expiry datetime
         """
-
-        return self._make_token_with_timestamp(user, self._num_seconds(self._now()))
+        if expiry is None:
+            return self._make_token_with_timestamp(user, self._num_seconds(self._now()))
+        return self._make_token_with_timestamp(user, self._num_seconds(expiry) - settings.EMAIL_TOKEN_LIFE)
 
     def check_token(self, token):
         """
@@ -72,9 +74,6 @@ class EmailVerificationTokenGenerator:
                 valid (bool): True if the token is valid
                 user (Model): the user model if the token is valid
         """
-
-        if not token:
-            return False, None
 
         try:
             email_b64, ts_b36, _ = token.split("-")

@@ -1,0 +1,3 @@
+Hai quasi finito!
+Vai su questo link per confrermare:
+{{ link }}

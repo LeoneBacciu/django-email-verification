@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if success %}Email confirmed{% else %}Error{% endif %}</title>
+</head>
+<body>
+<div id="center">
+    {% if success %}
+    {{ user.username }}, your account was confirmed!
+    {% else %}
+    Error, invalid token!
+    {% endif %}
+</div>
+</body>
+</html>

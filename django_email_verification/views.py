@@ -8,6 +8,8 @@ from .errors import NotAllFieldCompiled
 def verify(request, token):
     try:
         template = settings.EMAIL_PAGE_TEMPLATE
+        if not isinstance(template, str):
+            raise AttributeError
         success, user = verify_token(token)
         return render(request, template, {'success': success, 'user': user, 'request': request})
     except AttributeError:

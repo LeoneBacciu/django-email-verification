@@ -146,8 +146,7 @@ def my_functional_view(request):
     return render(...)
 ```
 
-`send_email(user)` sends an email with the defined template (and the
-pseudo-random generated token) to the user.
+`send_email(user)` sends an email with the defined template (and the pseudo-random generated token) to the user.
 
 > **_IMPORTANT:_** You have to manually set the user to inactive before sending the email.
 

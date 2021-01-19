@@ -11,18 +11,15 @@ from .errors import InvalidUserModel, NotAllFieldCompiled
 from .token import default_token_generator
 
 
-def send_email(user, **kwargs):
+def send_email(user, thread=True, **kwargs):
     try:
         user.save()
 
         if kwargs.get('custom_salt'):
             default_token_generator.key_salt = kwargs['custom_salt']
 
-        try:
-            token = kwargs['token']
-            expiry = kwargs['expiry']
-        except KeyError:
-            token, expiry = default_token_generator.make_token(user)
+        expiry_ = kwargs.get('expiry')
+        token, expiry = default_token_generator.make_token(user, expiry_)
 
         sender = _get_validated_field('EMAIL_FROM_ADDRESS')
         domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
@@ -31,8 +28,11 @@ def send_email(user, **kwargs):
         mail_html = _get_validated_field('EMAIL_MAIL_HTML')
 
         args = (user, token, expiry, sender, domain, subject, mail_plain, mail_html)
-        t = Thread(target=send_email_thread, args=args)
-        t.start()
+        if thread:
+            t = Thread(target=send_email_thread, args=args)
+            t.start()
+        else:
+            send_email_thread(*args)
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
 
@@ -58,7 +58,7 @@ def send_email_thread(user, token, expiry, sender, domain, subject, mail_plain, 
     msg.send()
 
 
-def _get_validated_field(field, raise_error=True, default_type=None):
+def _get_validated_field(field, default_type=None):
     if default_type is None:
         default_type = str
     try:
@@ -67,9 +67,7 @@ def _get_validated_field(field, raise_error=True, default_type=None):
             raise AttributeError
         return d
     except AttributeError:
-        if raise_error:
-            raise NotAllFieldCompiled(f"Field {field} missing or invalid")
-        return None
+        raise NotAllFieldCompiled(f"Field {field} missing or invalid")
 
 
 def verify_token(token):
