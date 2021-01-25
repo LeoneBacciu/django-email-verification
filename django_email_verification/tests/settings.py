@@ -59,7 +59,7 @@ def verified(user):
 
 EMAIL_VERIFIED_CALLBACK = verified
 EMAIL_FROM_ADDRESS = 'rousseau.platform@gmail.com'
-EMAIL_MAIL_SUBJECT = 'Conferma la tua mail'
+EMAIL_MAIL_SUBJECT = 'Confirm your email {{ user.username }}'
 EMAIL_MAIL_HTML = 'mail.html'
 EMAIL_MAIL_PLAIN = 'plainmail.txt'
 EMAIL_TOKEN_LIFE = 60 * 60

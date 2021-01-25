@@ -3,6 +3,7 @@ from typing import Callable
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.template import Template, Context
 from django.template.loader import render_to_string
 from django.urls import get_resolver
 from django.utils import timezone
@@ -48,6 +49,8 @@ def send_email_thread(user, token, expiry, sender, domain, subject, mail_plain, 
             link = domain + addr[0: addr.index('%')] + token
 
     context = {'link': link, 'expiry': expiry, 'user': user}
+
+    subject = Template(subject).render(Context(context))
 
     text = render_to_string(mail_plain, context)
 
