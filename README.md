@@ -56,6 +56,7 @@ EMAIL_MAIL_PLAIN = 'mail_body.txt'
 EMAIL_TOKEN_LIFE = 60 * 60
 EMAIL_PAGE_TEMPLATE = 'confirm_template.html'
 EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
+EMAIL_MULTI_USER = True  # optional (defaults to False)
 
 # For Django Email Backend
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -80,28 +81,28 @@ In detail:
 + `EMAIL_TOKEN_LIFE`: the lifespan of the email link (in seconds).
 + `EMAIL_PAGE_TEMPLATE`: the template of the success/error view.
 + `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain).
++ `EMAIL_MULTI_USER`: (optional) if `True` an error won't be thrown if multiple users with the same email are present (just one will be activated)
 
 For the Django Email Backend fields look at the
 official [documentation](https://docs.djangoproject.com/en/3.1/topics/email/).
 
 ## Templates examples
 
+
+The `EMAIL_MAIL_SUBJECT` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
+passed during the rendering):
+
+```python
+EMAIL_MAIL_SUBJECT = 'Confirm your email {{ user.username }}'
+```
+
 The `EMAIL_MAIL_HTML` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
 passed during the rendering):
 
 ```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Email Confirmation</title>
-</head>
-<body>
 <h1>You are almost there, {{ user.username }}!</h1><br>
 <h2>Please click <a href="{{ link }}">here</a> to confirm your account</h2>
 <h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
-</body>
-</html>
 ```
 
 The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
