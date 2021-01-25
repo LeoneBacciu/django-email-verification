@@ -78,12 +78,18 @@ class EmailVerificationTokenGenerator:
         try:
             email_b64, ts_b36, _ = token.split("-")
             email = urlsafe_base64_decode(email_b64).decode()
-            user = get_user_model().objects.get(email=email)
+            if hasattr(settings, 'EMAIL_MULTI_USER') and settings.EMAIL_MULTI_USER:
+                users = get_user_model().objects.filter(email=email)
+            else:
+                users = [get_user_model().objects.get(email=email)]
             ts = base36_to_int(ts_b36)
         except (ValueError, get_user_model().DoesNotExist):
             return False, None
 
-        if not constant_time_compare(self._make_token_with_timestamp(user, ts)[0], token):
+        user = next(filter(lambda u: constant_time_compare(self._make_token_with_timestamp(u, ts)[0], token), users),
+                    None)
+
+        if not user:
             return False, None
 
         now = self._now()
