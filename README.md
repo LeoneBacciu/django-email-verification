@@ -210,3 +210,12 @@ Pass the custom_salt keyword parameter to the `send_confirm` method as follows:
 ```python
 send_email(user, custom_salt=my_custom_key_salt)
 ```
+
+
+
+### Logo copyright:
+
+Logo by by <a href="https://github.com/filippoveggo" title="Flippo Veggo">Filippo Veggo</a>
+<div>"Django and the Django logo are registered trademarks of Django Software Foundation.<br/>Usage of the Django trademarks are subject to the Django Trademark licensing Agreement."</div>
+<div>Icons made by <a href="https://www.flaticon.com/authors/kiranshastry" title="Kiranshastry">Kiranshastry</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+<div>Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pixel perfect">Pixel perfect</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
