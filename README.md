@@ -205,12 +205,12 @@ You can use all the django email backends and also your custom one.
 
 ## Custom salt for token generation
 
-Pass the custom_salt keyword parameter to the `send_confirm` method as follows:
+You can define a custom salt to be used in token generation in your settings file.  Simply define:
 
 ```python
-send_email(user, custom_salt=my_custom_key_salt)
+CUSTOM_SALT = 'xxxxxxxxxxxxxxxxxxxxxxx'
 ```
-
+in your settings.py. 
 
 
 ### Logo copyright:
