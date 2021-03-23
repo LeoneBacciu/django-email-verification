@@ -41,7 +41,10 @@ class EmailVerificationTokenGenerator:
     Strategy object used to generate and check tokens for the password
     reset mechanism.
     """
-    key_salt = "django-email-verification.token"
+    try:
+         key_salt = settings.CUSTOM_SALT
+    except AttributeError:
+         key_salt = "django-email-verification.token"
     algorithm = None
     secret = settings.SECRET_KEY
 
