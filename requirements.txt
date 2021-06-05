@@ -1,7 +1,7 @@
 asgiref==3.3.1
 attrs==20.3.0
 coverage==5.3.1
-Django==3.1.8
+Django==3.1.9
 iniconfig==1.1.1
 packaging==20.8
 pluggy==0.13.1
