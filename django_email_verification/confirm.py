@@ -16,9 +16,6 @@ def send_email(user, thread=True, **kwargs):
     try:
         user.save()
 
-        if kwargs.get('custom_salt'):
-            default_token_generator.key_salt = kwargs['custom_salt']
-
         expiry_ = kwargs.get('expiry')
         token, expiry = default_token_generator.make_token(user, expiry_)
 
