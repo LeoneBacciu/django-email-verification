@@ -42,9 +42,9 @@ class EmailVerificationTokenGenerator:
     reset mechanism.
     """
     try:
-         key_salt = settings.CUSTOM_SALT
+        key_salt = settings.CUSTOM_SALT
     except AttributeError:
-         key_salt = "django-email-verification.token"
+        key_salt = "django-email-verification.token"
     algorithm = None
     secret = settings.SECRET_KEY
 
