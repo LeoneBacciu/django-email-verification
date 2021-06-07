@@ -6,7 +6,6 @@ Django==3.2.4
 iniconfig==1.1.1
 packaging==20.9
 pep517==0.10.0
-pkg-resources==0.0.0
 pluggy==0.13.1
 py==1.10.0
 pyparsing==2.4.7
