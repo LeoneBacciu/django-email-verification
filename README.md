@@ -81,13 +81,13 @@ In detail:
 + `EMAIL_TOKEN_LIFE`: the lifespan of the email link (in seconds).
 + `EMAIL_PAGE_TEMPLATE`: the template of the success/error view.
 + `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain).
-+ `EMAIL_MULTI_USER`: (optional) if `True` an error won't be thrown if multiple users with the same email are present (just one will be activated)
++ `EMAIL_MULTI_USER`: (optional) if `True` an error won't be thrown if multiple users with the same email are present (
+  just one will be activated)
 
 For the Django Email Backend fields look at the
 official [documentation](https://docs.djangoproject.com/en/3.1/topics/email/).
 
 ## Templates examples
-
 
 The `EMAIL_MAIL_SUBJECT` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
 passed during the rendering):
@@ -175,24 +175,56 @@ class MyClassView(FormView):
 
 ## Token verification
 
-You have to include the urls in `urls.py`
+There are two ways to get the token verified:
 
-```python
-from django.contrib import admin
-from django.urls import path, include
-from django_email_verification import urls as email_urls
++ The first one is the simplest: you just have to include the app urls in `urls.py`
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    ...
-    path('email/', include(email_urls)),
-]
-```
+    ```python
+    from django.contrib import admin
+    from django.urls import path, include
+    from django_email_verification import urls as email_urls  # include the urls
 
-When a request arrives to `https.//mydomain.com/email/<base64-email>/<token>` the package verifies the token and:
+    urlpatterns = [
+      path('admin/', admin.site.urls),
+      ...
+      path('email/', include(email_urls)),  # connect them to an arbitrary path
+    ]
+  ```
+  When a request arrives to `https.//mydomain.com/email/<token>` the package verifies the token and:
 
-+ if it corresponds to a pending token it renders the `EMAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
-+ if it doesn't correspond it renders the `EMAIL_PAGE_TEMPLATE` passing `success=False`
+  + if it corresponds to a pending token it renders the `EMAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
+  + if it doesn't correspond it renders the `EMAIL_PAGE_TEMPLATE` passing `success=False`
+
+
++ The second one is more customizable: you can build your own view for verification, mark it as `@verify_view`, verify the token manually with the function `verify_token(token)` and execute your custom logic,
+  here's how:
+
+  ```python
+  ### For the view
+
+  from django.http import HttpResponse
+  from django_email_verification import verify_view, verify_token
+
+
+  @verify_view
+  def confirm(request, token):
+      success, user = verify_token(token)
+      return HttpResponse(f'Account verified, {user.username}' if success else 'Invalid token')
+
+
+  ### For the urls
+  from django.urls import path
+
+  urlpatterns = [
+      ...
+      path('email/<str:token>/', confirm), # remember to set the "token" parameter in the url!
+      ...
+  ]
+  ```
+
+  The library makes sure one and only one `@verify_view` is present and throws an error if this condition is not met.
+
+
 
 ## Console backend for development
 
@@ -206,13 +238,13 @@ You can use all the django email backends and also your custom one.
 
 ## Custom salt for token generation
 
-You can define a custom salt to be used in token generation in your settings file.  Simply define:
+You can define a custom salt to be used in token generation in your settings file. Simply define:
 
 ```python
 CUSTOM_SALT = 'xxxxxxxxxxxxxxxxxxxxxxx'
 ```
-in your settings.py. 
 
+in your settings.py.
 
 ### Logo copyright:
 
