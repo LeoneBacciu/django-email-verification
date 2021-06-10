@@ -1,3 +1,5 @@
+import functools
+import logging
 from threading import Thread
 from typing import Callable
 
@@ -10,6 +12,11 @@ from django.utils import timezone
 
 from .errors import InvalidUserModel, NotAllFieldCompiled
 from .token import default_token_generator
+
+logger = logging.getLogger('django_email_verification')
+DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR = 'ERROR: more than one verify view found'
+DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR = 'ERROR: no verify view found'
+DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING = 'WARNING: found verify view without parameter'
 
 
 def send_email(user, thread=True, **kwargs):
@@ -38,14 +45,25 @@ def send_email(user, thread=True, **kwargs):
 def send_email_thread(user, token, expiry, sender, domain, subject, mail_plain, mail_html):
     domain += '/' if not domain.endswith('/') else ''
 
-    from .views import verify
-    link = ''
-    for k, v in get_resolver(None).reverse_dict.items():
-        if k is verify and v[0][0][1][0]:
-            addr = str(v[0][0][0])
-            link = domain + addr[0: addr.index('%')] + token
+    def has_decorator(k):
+        return k.__dict__.get('django_email_verification_view_id', False)
 
-    context = {'link': link, 'expiry': expiry, 'user': user}
+    d = [v[0][0] for k, v in get_resolver(None).reverse_dict.items() if has_decorator(k)]
+    w = [a[0] for a in d if a[1] == []]
+    d = [a[0][:a[0].index('%')] for a in d if a[1] != []]
+
+    if len(w) > 0:
+        logger.warning(f'{DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING}: {w}')
+
+    if len(d) < 1:
+        logger.error(DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR)
+        return
+
+    if len(d) > 1:
+        logger.error(f'{DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR}: {d}')
+        return
+
+    context = {'link': domain + d[0] + token, 'expiry': expiry, 'user': user}
 
     subject = Template(subject).render(Context(context))
 
@@ -79,3 +97,13 @@ def verify_token(token):
         user.save()
         return valid, user
     return False, None
+
+
+def verify_view(func):
+    func.django_email_verification_view_id = True
+
+    @functools.wraps(func)
+    def verify_function_wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return verify_function_wrapper

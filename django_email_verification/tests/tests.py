@@ -1,3 +1,4 @@
+import logging
 import re
 import time
 from datetime import datetime
@@ -7,8 +8,25 @@ from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django.utils.http import int_to_base36, base36_to_int
 
-from .. import send_email
-from ..errors import NotAllFieldCompiled, InvalidUserModel
+from django_email_verification import send_email
+from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
+from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
+    DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR, DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING
+
+
+class LogHandler(logging.StreamHandler):
+    def __init__(self, levelname, match, callback):
+        super().__init__()
+        self.levelname = levelname
+        self.match = match
+        self.callback = callback
+        self.warning_found = False
+        self.error_found = False
+
+    def emit(self, record):
+        msg = self.format(record)
+        if record.levelname == self.levelname and msg.startswith(self.match):
+            self.callback()
 
 
 def get_mail_params(content):
@@ -147,6 +165,56 @@ def test_multi_user(mailoutbox, settings, client):
     match = render_to_string('confirm.html', {'success': True, 'user': test_user_1})
     assert response.content.decode() == match
     assert list(get_user_model().objects.filter(email='test@test.com').values_list('is_active')) == [(True,), (False,)]
+
+
+@pytest.mark.urls('django_email_verification.tests.urls_test_1')
+@pytest.mark.django_db
+def test_too_many_verify_view(test_user):
+    error_raised = False
+
+    def raise_error():
+        nonlocal error_raised
+        error_raised = True
+
+    handler = LogHandler('ERROR', DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, raise_error)
+    logger = logging.getLogger('django_email_verification')
+    logger.addHandler(handler)
+    test_user.is_active = False
+    send_email(test_user, thread=False)
+    assert error_raised, 'No error raised if multiple views are found'
+
+
+@pytest.mark.urls('django_email_verification.tests.urls_test_2')
+@pytest.mark.django_db
+def test_no_verify_view(test_user):
+    error_raised = False
+
+    def raise_error():
+        nonlocal error_raised
+        error_raised = True
+
+    handler = LogHandler('ERROR', DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR, raise_error)
+    logger = logging.getLogger('django_email_verification')
+    logger.addHandler(handler)
+    test_user.is_active = False
+    send_email(test_user, thread=False)
+    assert error_raised, 'No error raised if no views are found'
+
+
+@pytest.mark.django_db
+def test_incomplete_verify_view(test_user):
+    warning_raised = False
+
+    def raise_warning():
+        nonlocal warning_raised
+        warning_raised = True
+
+    handler = LogHandler('WARNING', DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING, raise_warning)
+    logger = logging.getLogger('django_email_verification')
+    logger.addHandler(handler)
+    test_user.is_active = False
+    send_email(test_user, thread=False)
+    assert warning_raised, 'No warning raised if incomplete urls are found'
 
 
 def test_app_config():
