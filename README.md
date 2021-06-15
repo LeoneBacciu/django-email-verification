@@ -221,6 +221,7 @@ There are two ways to get the token verified:
       ...
   ]
   ```
+  > **_IMPORTANT:_** the path must **NOT** have the `name` attribute set
 
   The library makes sure one and only one `@verify_view` is present and throws an error if this condition is not met.
 
