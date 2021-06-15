@@ -46,7 +46,9 @@ def send_email_thread(user, token, expiry, sender, domain, subject, mail_plain, 
     domain += '/' if not domain.endswith('/') else ''
 
     def has_decorator(k):
-        return k.__dict__.get('django_email_verification_view_id', False)
+        if callable(k):
+            return k.__dict__.get('django_email_verification_view_id', False)
+        return False
 
     d = [v[0][0] for k, v in get_resolver(None).reverse_dict.items() if has_decorator(k)]
     w = [a[0] for a in d if a[1] == []]
