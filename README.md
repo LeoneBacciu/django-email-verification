@@ -11,6 +11,11 @@
   <img src="https://github.com/LeoneBacciu/django-email-verification/blob/master/icon.png?raw=True" width="300px" alt="icon">
 </p>
 
+<p align="center">
+Do you like my work and want to support me?<br/><br/>
+<a href="https://www.buymeacoffee.com/LeoneBacciu" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
+</p>
+
 ## Requirements
 
 + Python >= 3.8
