@@ -1,5 +1,6 @@
 import functools
 import logging
+import types
 from threading import Thread
 from typing import Callable
 
@@ -94,7 +95,10 @@ def verify_token(token):
     valid, user = default_token_generator.check_token(token)
     if valid:
         callback = _get_validated_field('EMAIL_VERIFIED_CALLBACK', default_type=Callable)
-        callback(user)
+        if type(callback) == types.FunctionType:
+            callback(user)
+        elif type(callback) == types.MethodType:
+            callback()
         user.last_login = timezone.now()
         user.save()
         return valid, user
