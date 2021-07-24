@@ -58,6 +58,16 @@ def wrong_token_template():
     match = render_to_string('confirm.html', {'success': False, 'user': None})
     return match
 
+@pytest.fixture
+def test_user_with_class_method(settings):
+    def verified_callback(self):
+        self.is_active=True
+    get_user_model().add_to_class('verified_callback', verified_callback)
+    settings.EMAIL_VERIFIED_CALLBACK = get_user_model().verified_callback
+    user = get_user_model()(username='test_user_with_class_method', password='test_passwd', email='test@test.com')
+    return user
+
+
 
 @pytest.mark.django_db
 def test_missing_params(test_user, settings, client):
@@ -107,14 +117,10 @@ def test_email_link_correct(test_user, mailoutbox, client):
     check_verification(test_user, mailoutbox, client)
 
 @pytest.mark.django_db
-def test_email_link_correct_user_model_method(test_user, mailoutbox, client):
-    def user_model_verified_callback(self):
-        self.is_active=True
-    
-    models.User.add_to_class('verified_callback', user_model_verified_callback)
-    setattr(settings, "EMAIL_VERIFIED_CALLBACK", models.User.verified_callback)
-    test_user.is_active = False
-    check_verification(test_user, mailoutbox, client)
+def test_email_link_correct_user_model_method(test_user_with_class_method, mailoutbox, client):
+    test_user_with_class_method.is_active = False
+    assert hasattr(get_user_model(), settings.EMAIL_VERIFIED_CALLBACK.__name__)
+    check_verification(test_user_with_class_method, mailoutbox, client)
 
 
 @pytest.mark.django_db
