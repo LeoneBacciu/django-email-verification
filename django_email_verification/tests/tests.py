@@ -5,7 +5,7 @@ from datetime import datetime
 from django.conf import settings
 
 import pytest
-from django.contrib.auth import get_user_model, models
+from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django.utils.http import int_to_base36, base36_to_int
 
