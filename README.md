@@ -92,6 +92,12 @@ In detail:
 For the Django Email Backend fields look at the
 official [documentation](https://docs.djangoproject.com/en/3.1/topics/email/).
 
+The `EMAIL_VERIFIED_CALLBACK` can be a function on the `AUTH_USER_MODEL`, for example:
+```python
+EMAIL_VERIFIED_CALLBACK = get_user_model().verified_callback
+```
+The function will receive no arguments.
+
 ## Templates examples
 
 The `EMAIL_MAIL_SUBJECT` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
