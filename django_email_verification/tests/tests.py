@@ -2,6 +2,7 @@ import logging
 import re
 import time
 from datetime import datetime
+from django.conf import settings
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -35,7 +36,17 @@ def get_mail_params(content):
                      content)[0][-1]
     return url, expiry
 
+def check_verification(test_user, mailoutbox, client):
+    send_email(test_user, thread=False)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, _ = get_mail_params(email_content)
+    response = client.get(url)
+    match = render_to_string('confirm.html', {'success': True, 'user': test_user})
+    assert response.content.decode() == match
+    assert get_user_model().objects.get(email='test@test.com').is_active
 
+    
 @pytest.fixture
 def test_user():
     user = get_user_model()(username='test_user', password='test_passwd', email='test@test.com')
@@ -46,6 +57,16 @@ def test_user():
 def wrong_token_template():
     match = render_to_string('confirm.html', {'success': False, 'user': None})
     return match
+
+@pytest.fixture
+def test_user_with_class_method(settings):
+    def verified_callback(self):
+        self.is_active=True
+    get_user_model().add_to_class('verified_callback', verified_callback)
+    settings.EMAIL_VERIFIED_CALLBACK = get_user_model().verified_callback
+    user = get_user_model()(username='test_user_with_class_method', password='test_passwd', email='test@test.com')
+    return user
+
 
 
 @pytest.mark.django_db
@@ -93,14 +114,13 @@ def test_email_custom_params(test_user, mailoutbox):
 @pytest.mark.django_db
 def test_email_link_correct(test_user, mailoutbox, client):
     test_user.is_active = False
-    send_email(test_user, thread=False)
-    email = mailoutbox[0]
-    email_content = email.alternatives[0][0]
-    url, _ = get_mail_params(email_content)
-    response = client.get(url)
-    match = render_to_string('confirm.html', {'success': True, 'user': test_user})
-    assert response.content.decode() == match
-    assert get_user_model().objects.get(email='test@test.com').is_active
+    check_verification(test_user, mailoutbox, client)
+
+@pytest.mark.django_db
+def test_email_link_correct_user_model_method(test_user_with_class_method, mailoutbox, client):
+    test_user_with_class_method.is_active = False
+    assert hasattr(get_user_model(), settings.EMAIL_VERIFIED_CALLBACK.__name__)
+    check_verification(test_user_with_class_method, mailoutbox, client)
 
 
 @pytest.mark.django_db

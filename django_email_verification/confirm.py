@@ -94,7 +94,10 @@ def verify_token(token):
     valid, user = default_token_generator.check_token(token)
     if valid:
         callback = _get_validated_field('EMAIL_VERIFIED_CALLBACK', default_type=Callable)
-        callback(user)
+        if hasattr(user, callback.__name__):
+            getattr(user, callback.__name__)()
+        else:
+            callback(user)
         user.last_login = timezone.now()
         user.save()
         return valid, user
