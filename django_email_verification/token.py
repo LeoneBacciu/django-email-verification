@@ -31,10 +31,9 @@ class EmailVerificationTokenGenerator:
                 token (str): the token
                 expiry (datetime): the expiry datetime
         """
-        exp = self._now() if expiry is None else (int(expiry.timestamp()) - settings.EMAIL_TOKEN_LIFE)
+        exp = (self._now() + settings.EMAIL_TOKEN_LIFE) if expiry is None else int(expiry.timestamp())
         payload = {'email': user.email, 'exp': exp}
-        return jwt.encode(payload, self.secret, algorithm='HS256'), datetime.fromtimestamp(
-            exp + settings.EMAIL_TOKEN_LIFE)
+        return jwt.encode(payload, self.secret, algorithm='HS256'), datetime.fromtimestamp(exp)
 
     def check_token(self, token):
         """

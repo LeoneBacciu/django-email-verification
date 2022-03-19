@@ -41,6 +41,7 @@ def check_verification(test_user, mailoutbox, client):
     send_email(test_user, thread=False)
     email = mailoutbox[0]
     email_content = email.alternatives[0][0]
+    time.sleep(1)
     url, _ = get_mail_params(email_content)
     response = client.get(url)
     match = render_to_string('confirm.html', {'success': True, 'user': test_user})
