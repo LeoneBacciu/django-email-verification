@@ -2,17 +2,17 @@ import logging
 import re
 import time
 from datetime import datetime
-from django.conf import settings
 
+import jwt
 import pytest
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
-from django.utils.http import int_to_base36, base36_to_int
 
 from django_email_verification import send_email
-from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
 from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
     DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR, DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING
+from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
 
 
 class LogHandler(logging.StreamHandler):
@@ -32,9 +32,10 @@ class LogHandler(logging.StreamHandler):
 
 def get_mail_params(content):
     expiry = re.findall(r'\d{1,2}:\d{1,2}', content)[0]
-    url = re.findall(r'(http|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?',
+    url = re.findall(r'(http|https)://([\w_-]+(?:\.[\w_-]+)+)([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?',
                      content)[0][-1]
     return url, expiry
+
 
 def check_verification(test_user, mailoutbox, client):
     send_email(test_user, thread=False)
@@ -46,7 +47,7 @@ def check_verification(test_user, mailoutbox, client):
     assert response.content.decode() == match
     assert get_user_model().objects.get(email='test@test.com').is_active
 
-    
+
 @pytest.fixture
 def test_user():
     user = get_user_model()(username='test_user', password='test_passwd', email='test@test.com')
@@ -58,15 +59,16 @@ def wrong_token_template():
     match = render_to_string('confirm.html', {'success': False, 'user': None})
     return match
 
+
 @pytest.fixture
 def test_user_with_class_method(settings):
     def verified_callback(self):
-        self.is_active=True
+        self.is_active = True
+
     get_user_model().add_to_class('verified_callback', verified_callback)
     settings.EMAIL_VERIFIED_CALLBACK = get_user_model().verified_callback
     user = get_user_model()(username='test_user_with_class_method', password='test_passwd', email='test@test.com')
     return user
-
 
 
 @pytest.mark.django_db
@@ -116,6 +118,7 @@ def test_email_link_correct(test_user, mailoutbox, client):
     test_user.is_active = False
     check_verification(test_user, mailoutbox, client)
 
+
 @pytest.mark.django_db
 def test_email_link_correct_user_model_method(test_user_with_class_method, mailoutbox, client):
     test_user_with_class_method.is_active = False
@@ -144,10 +147,44 @@ def test_token_different_timestamp(test_user, mailoutbox, client, wrong_token_te
     email_content = email.alternatives[0][0]
     url, _ = get_mail_params(email_content)
 
-    # Increment timestamp
-    token = url.split('-')
-    token[1] = int_to_base36(base36_to_int(token[1]) + 1)
-    url = '-'.join(token)
+    token = url.split('/')
+    token[-1] = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJleHAiOjE2NDc3MDgwODUuNzQ4NTM' \
+                '5fQ.eubT3GdPIMKXefQeJ8ZWVTjnm5nzt2ehwh9nkdpoCes'
+    url = '/'.join(token)
+
+    response = client.get(url)
+    assert response.content.decode() == wrong_token_template
+
+
+@pytest.mark.django_db
+def test_email_link_wrong_user(test_user, client, mailoutbox, wrong_token_template, settings):
+    test_user.is_active = False
+    send_email(test_user, thread=False)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, _ = get_mail_params(email_content)
+
+    url = url.split('/')
+    payload = jwt.decode(url[-1], settings.SECRET_KEY, algorithms=['HS256'])
+    payload.update({'email': 'noemail@test.com'})
+    url[-1] = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+    url = '/'.join(url)
+
+    response = client.get(url)
+    assert response.content.decode() == wrong_token_template
+
+    setattr(settings, 'EMAIL_MULTI_USER', True)
+    test_user.is_active = False
+    send_email(test_user, thread=False)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, _ = get_mail_params(email_content)
+
+    url = url.split('/')
+    payload = jwt.decode(url[-1], settings.SECRET_KEY, algorithms=['HS256'])
+    payload.update({'email': 'noemail@test.com'})
+    url[-1] = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+    url = '/'.join(url)
 
     response = client.get(url)
     assert response.content.decode() == wrong_token_template
