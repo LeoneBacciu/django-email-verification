@@ -2,7 +2,7 @@ asgiref==3.3.4
 attrs==21.2.0
 build==0.4.0
 coverage==5.5
-Django==3.2.12
+Django==3.2.13
 iniconfig==1.1.1
 packaging==20.9
 pep517==0.10.0
