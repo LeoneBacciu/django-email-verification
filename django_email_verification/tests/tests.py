@@ -9,9 +9,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 
-from django_email_verification import send_email
 from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
-    DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR, DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING
+    DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING, send_password, send_email
 from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
 
 
@@ -33,7 +32,11 @@ class LogHandler(logging.StreamHandler):
 def get_mail_params(content):
     expiry = re.findall(r'\d{1,2}:\d{1,2}', content)[0]
     url = re.findall(r'(http|https)://([\w_-]+(?:\.[\w_-]+)+)([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?',
-                     content)[0][-1]
+                     content)
+    if len(url) > 0:
+        url = url[0][-1]
+    else:
+        url = ''
     return url, expiry
 
 
@@ -62,6 +65,12 @@ def wrong_token_template():
 
 
 @pytest.fixture
+def wrong_password_token_template():
+    match = render_to_string('password_changed.html', {'success': False, 'user': None})
+    return match
+
+
+@pytest.fixture
 def test_user_with_class_method(settings):
     def verified_callback(self):
         self.is_active = True
@@ -81,7 +90,7 @@ def test_missing_params(test_user, settings, client):
         send_email(None, thread=False)
     with pytest.raises(NotAllFieldCompiled):
         settings.EMAIL_PAGE_TEMPLATE = None
-        url = '/email/_'
+        url = '/email/email/_'
         client.get(url)
 
 
@@ -105,7 +114,7 @@ def test_email_content(test_user, mailoutbox, settings):
 def test_email_custom_params(test_user, mailoutbox):
     s_expiry = datetime.now()
     test_user.is_active = False
-    send_email(test_user, thread=False, custom_salt='test_salt', expiry=s_expiry)
+    send_email(test_user, thread=False, expiry=s_expiry)
     email = mailoutbox[0]
     email_content = email.alternatives[0][0]
     _, expiry = get_mail_params(email_content)
@@ -129,13 +138,13 @@ def test_email_link_correct_user_model_method(test_user_with_class_method, mailo
 
 @pytest.mark.django_db
 def test_email_link_wrong(client, wrong_token_template):
-    url = '/email/dGVzdEB0ZXN0LmNvbE-agax3s-00348f02fabc98235547361a0fe69129b3b750f5'
+    url = '/email/email/dGVzdEB0ZXN0LmNvbE-agax3s-00348f02fabc98235547361a0fe69129b3b750f5'
     response = client.get(url)
     assert response.content.decode() == wrong_token_template, "Invalid token accepted"
-    url = '/email/_'
+    url = '/email/email/_'
     response = client.get(url)
     assert response.content.decode() == wrong_token_template, "Short token accepted"
-    url = '/email/dGVzdEB0ZXN0LmNvbE++-agax3sert-00=00348f02fabc98235547361a0fe69129b3b750f5'
+    url = '/email/email/dGVzdEB0ZXN0LmNvbE++-agax3sert-00=00348f02fabc98235547361a0fe69129b3b750f5'
     response = client.get(url)
     assert response.content.decode() == wrong_token_template, "Long token accepted"
 
@@ -244,19 +253,18 @@ def test_too_many_verify_view(test_user):
 
 @pytest.mark.urls('django_email_verification.tests.urls_test_2')
 @pytest.mark.django_db
-def test_no_verify_view(test_user):
-    error_raised = False
-
-    def raise_error():
-        nonlocal error_raised
-        error_raised = True
-
-    handler = LogHandler('ERROR', DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR, raise_error)
-    logger = logging.getLogger('django_email_verification')
-    logger.addHandler(handler)
-    test_user.is_active = False
+def test_no_verify_view(test_user, mailoutbox):
     send_email(test_user, thread=False)
-    assert error_raised, 'No error raised if no views are found'
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, expiry = get_mail_params(email_content)
+
+    assert email.subject == re.sub(r'({{.*}})', test_user.username,
+                                   settings.EMAIL_MAIL_SUBJECT), "The subject changed"
+    assert email.from_email == settings.EMAIL_FROM_ADDRESS, "The from_address changed"
+    assert email.to == [test_user.email], "The to_address changed"
+    assert len(expiry) > 0, f"No expiry time detected, {email_content}"
+    assert len(url) == 0, "Random link detected"
 
 
 @pytest.mark.django_db
@@ -273,6 +281,42 @@ def test_incomplete_verify_view(test_user):
     test_user.is_active = False
     send_email(test_user, thread=False)
     assert warning_raised, 'No warning raised if incomplete urls are found'
+
+
+@pytest.mark.django_db
+def test_password_content(test_user, mailoutbox, settings):
+    send_password(test_user, thread=True)
+    time.sleep(0.5)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, expiry = get_mail_params(email_content)
+
+    assert email.subject == re.sub(r'({{.*}})', test_user.username,
+                                   settings.EMAIL_PASSWORD_SUBJECT), "The subject changed"
+    assert email.from_email == settings.EMAIL_FROM_ADDRESS, "The from_address changed"
+    assert email.to == [test_user.email], "The to_address changed"
+    assert len(expiry) > 0, f"No expiry time detected, {email_content}"
+    assert len(url) > 0, "No link detected"
+
+
+@pytest.mark.django_db
+def test_password_change(test_user, mailoutbox, client):
+    send_password(test_user, thread=False)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, _ = get_mail_params(email_content)
+    new_password = 'new_password'
+    response = client.post(url, {'password': new_password})
+    match = render_to_string('confirm.html', {'success': True, 'user': test_user})
+    assert response.content.decode() == match
+    assert get_user_model().objects.get(email='test@test.com').check_password(new_password)
+
+
+@pytest.mark.django_db
+def test_password_link_wrong(client, wrong_password_token_template):
+    url = '/email/password/dGVzdEB0ZXN0LmNvbE-agax3s-00348f02fabc98235547361a0fe69129b3b750f5'
+    response = client.post(url, {'password': 'test'})
+    assert response.content.decode() == wrong_password_token_template, "Invalid token accepted"
 
 
 def test_app_config():

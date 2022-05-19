@@ -57,11 +57,21 @@ def verified(user):
     user.is_active = True
 
 
+def changePassword(user, password):
+    user.set_password(password)
+
+
 EMAIL_VERIFIED_CALLBACK = verified
+EMAIL_PASSWORD_CHANGED_CALLBACK = changePassword
 EMAIL_FROM_ADDRESS = 'rousseau.platform@gmail.com'
 EMAIL_MAIL_SUBJECT = 'Confirm your email {{ user.username }}'
+EMAIL_PASSWORD_SUBJECT = 'Confirm your password change {{ user.username }}'
 EMAIL_MAIL_HTML = 'mail.html'
+EMAIL_PASSWORD_HTML = 'password.html'
 EMAIL_MAIL_PLAIN = 'plainmail.txt'
+EMAIL_PASSWORD_PLAIN = 'plainpassword.txt'
 EMAIL_TOKEN_LIFE = 60 * 60
 EMAIL_PAGE_TEMPLATE = 'confirm.html'
+EMAIL_PASSWORD_CHANGED_TEMPLATE = 'password_changed.html'
+EMAIL_PASSWORD_TEMPLATE = 'password_change.html'
 EMAIL_PAGE_DOMAIN = 'https://test.com/'
