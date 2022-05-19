@@ -9,8 +9,9 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 
+from django_email_verification import send_password, send_email
 from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
-    DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING, send_password, send_email
+    DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING
 from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
 
 
