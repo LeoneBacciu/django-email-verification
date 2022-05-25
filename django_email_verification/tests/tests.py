@@ -8,6 +8,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
+from django.test import Client
 
 from django_email_verification import send_password, send_email
 from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
@@ -54,6 +55,11 @@ def check_verification(test_user, mailoutbox, client):
 
 
 @pytest.fixture
+def client():
+    return Client(enforce_csrf_checks=True)
+
+
+@pytest.fixture
 def test_user():
     user = get_user_model()(username='test_user', password='test_passwd', email='test@test.com')
     return user
@@ -76,8 +82,13 @@ def test_user_with_class_method(settings):
     def verified_callback(self):
         self.is_active = True
 
+    def password_changed(self, password):
+        self.set_password(password)
+
     get_user_model().add_to_class('verified_callback', verified_callback)
+    get_user_model().add_to_class('password_changed', password_changed)
     settings.EMAIL_VERIFIED_CALLBACK = get_user_model().verified_callback
+    settings.EMAIL_PASSWORD_CHANGED_CALLBACK = get_user_model().password_changed
     user = get_user_model()(username='test_user_with_class_method', password='test_passwd', email='test@test.com')
     return user
 
@@ -92,8 +103,14 @@ def test_missing_params(test_user, settings, client):
     with pytest.raises(NotAllFieldCompiled):
         settings.EMAIL_MAIL_PAGE_TEMPLATE = None
         settings.EMAIL_PAGE_TEMPLATE = None
-        url = '/email/email/_'
-        client.get(url)
+        client.get('/confirm/email/_')
+    with pytest.raises(NotAllFieldCompiled):
+        settings.EMAIL_MAIL_TOKEN_LIFE = None
+        settings.EMAIL_TOKEN_LIFE = None
+        send_email(test_user)
+    with pytest.raises(NotAllFieldCompiled):
+        settings.EMAIL_PASSWORD_PAGE_TEMPLATE = None
+        client.get('/confirm/password/_')
 
 
 @pytest.mark.django_db
@@ -139,14 +156,34 @@ def test_email_link_correct_user_model_method(test_user_with_class_method, mailo
 
 
 @pytest.mark.django_db
+def test_password_link_correct_user_model_method(test_user_with_class_method, mailoutbox, client):
+    test_user_with_class_method.is_active = False
+    assert hasattr(get_user_model(), settings.EMAIL_PASSWORD_CHANGED_CALLBACK.__name__)
+    send_password(test_user_with_class_method, thread=False)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, _ = get_mail_params(email_content)
+    token = url.split('/')[-1]
+    response = client.get(url)
+    match = render_to_string('password_change.html', {'token': token})
+    assert response.content.decode() == match
+
+    new_password = 'new_password'
+    response = client.post(url, {'password': new_password})
+    match = render_to_string('confirm.html', {'success': True, 'user': test_user_with_class_method})
+    assert response.content.decode() == match
+    assert get_user_model().objects.get(email='test@test.com').check_password(new_password)
+
+
+@pytest.mark.django_db
 def test_email_link_wrong(client, wrong_token_template):
-    url = '/email/email/dGVzdEB0ZXN0LmNvbE-agax3s-00348f02fabc98235547361a0fe69129b3b750f5'
+    url = '/confirm/email/dGVzdEB0ZXN0LmNvbE-agax3s-00348f02fabc98235547361a0fe69129b3b750f5'
     response = client.get(url)
     assert response.content.decode() == wrong_token_template, "Invalid token accepted"
-    url = '/email/email/_'
+    url = '/confirm/email/_'
     response = client.get(url)
     assert response.content.decode() == wrong_token_template, "Short token accepted"
-    url = '/email/email/dGVzdEB0ZXN0LmNvbE++-agax3sert-00=00348f02fabc98235547361a0fe69129b3b750f5'
+    url = '/confirm/email/dGVzdEB0ZXN0LmNvbE++-agax3sert-00=00348f02fabc98235547361a0fe69129b3b750f5'
     response = client.get(url)
     assert response.content.decode() == wrong_token_template, "Long token accepted"
 
@@ -185,7 +222,7 @@ def test_email_link_wrong_user(test_user, client, mailoutbox, wrong_token_templa
     response = client.get(url)
     assert response.content.decode() == wrong_token_template
 
-    setattr(settings, 'EMAIL_MULTI_USER', True)
+    settings.EMAIL_MULTI_USER = True
     test_user.is_active = False
     send_email(test_user, thread=False)
     email = mailoutbox[0]
@@ -306,7 +343,14 @@ def test_password_change(test_user, mailoutbox, client):
     send_password(test_user, thread=False)
     email = mailoutbox[0]
     email_content = email.alternatives[0][0]
+
     url, _ = get_mail_params(email_content)
+
+    token = url.split('/')[-1]
+    response = client.get(url)
+    match = render_to_string('password_change.html', {'token': token})
+    assert response.content.decode() == match
+
     new_password = 'new_password'
     response = client.post(url, {'password': new_password})
     match = render_to_string('confirm.html', {'success': True, 'user': test_user})
@@ -315,8 +359,22 @@ def test_password_change(test_user, mailoutbox, client):
 
 
 @pytest.mark.django_db
+def test_password_email_link(test_user, mailoutbox, client):
+    send_email(test_user, thread=False)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    url, _ = get_mail_params(email_content)
+    url = url.replace('email', 'password')
+    new_password = 'new_password'
+    response = client.post(url, {'password': new_password})
+    match = render_to_string('confirm.html', {'success': False, 'user': None})
+    assert response.content.decode() == match
+    assert not get_user_model().objects.get(email='test@test.com').check_password(new_password)
+
+
+@pytest.mark.django_db
 def test_password_link_wrong(client, wrong_password_token_template):
-    url = '/email/password/dGVzdEB0ZXN0LmNvbE-agax3s-00348f02fabc98235547361a0fe69129b3b750f5'
+    url = '/confirm/password/dGVzdEB0ZXN0LmNvbE-agax3s-00348f02fabc98235547361a0fe69129b3b750f5'
     response = client.post(url, {'password': 'test'})
     assert response.content.decode() == wrong_password_token_template, "Invalid token accepted"
 
