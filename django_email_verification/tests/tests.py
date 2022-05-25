@@ -90,6 +90,7 @@ def test_missing_params(test_user, settings, client):
     with pytest.raises(InvalidUserModel):
         send_email(None, thread=False)
     with pytest.raises(NotAllFieldCompiled):
+        settings.EMAIL_MAIL_PAGE_TEMPLATE = None
         settings.EMAIL_PAGE_TEMPLATE = None
         url = '/email/email/_'
         client.get(url)
@@ -203,7 +204,7 @@ def test_email_link_wrong_user(test_user, client, mailoutbox, wrong_token_templa
 
 @pytest.mark.django_db
 def test_token_expired(test_user, mailoutbox, settings, client, wrong_token_template):
-    settings.EMAIL_TOKEN_LIFE = 1
+    settings.EMAIL_MAIL_TOKEN_LIFE = 1
     test_user.is_active = False
     send_email(test_user, thread=False)
     email = mailoutbox[0]

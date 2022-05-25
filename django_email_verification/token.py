@@ -17,14 +17,14 @@ class EmailVerificationTokenGenerator:
     algorithm = None
     secret = settings.SECRET_KEY
 
-    def make_token(self, user, expiry=None, **kwargs):
+    def make_token(self, user, expiry, **kwargs):
         """
         Return a token that can be used once to do a password reset
         for the given user.
 
         Args:
             user (Model): the user
-            expiry (datetime): optional forced expiry date
+            expiry (datetime | int): optional forced expiry date
             kwargs: extra payload for the token
 
         Returns:
@@ -32,7 +32,7 @@ class EmailVerificationTokenGenerator:
                 token (str): the token
                 expiry (datetime): the expiry datetime
         """
-        exp = (self._now() + settings.EMAIL_TOKEN_LIFE) if expiry is None else int(expiry.timestamp())
+        exp = int(expiry.timestamp()) if isinstance(expiry, datetime) else expiry
         payload = {'email': user.email, 'exp': exp}
         payload.update(**kwargs)
         return jwt.encode(payload, self.secret, algorithm='HS256'), datetime.fromtimestamp(exp)
@@ -71,7 +71,7 @@ class EmailVerificationTokenGenerator:
         return True, users[0]
 
     @staticmethod
-    def _now():
+    def now():
         return datetime.now().timestamp()
 
 

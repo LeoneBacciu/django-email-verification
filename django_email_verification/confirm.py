@@ -32,7 +32,9 @@ def send_inner(user, thread, expiry, kind):
     try:
         user.save()
 
-        token, expiry = default_token_generator.make_token(user, expiry, kind=kind)
+        exp = expiry if expiry is not None else _get_validated_field(f'EMAIL_{kind}_TOKEN_LIFE', 'EMAIL_TOKEN_LIFE',
+                                                                     default_type=int) + default_token_generator.now()
+        token, expiry = default_token_generator.make_token(user, exp, kind=kind)
 
         sender = _get_validated_field('EMAIL_FROM_ADDRESS')
         domain = _get_validated_field('EMAIL_PAGE_DOMAIN')
@@ -87,7 +89,7 @@ def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_p
     msg.send()
 
 
-def _get_validated_field(field, default_type=None):
+def _get_validated_field(field, fallback=None, default_type=None):
     if default_type is None:
         default_type = str
     try:
@@ -96,6 +98,8 @@ def _get_validated_field(field, default_type=None):
             raise AttributeError
         return d
     except AttributeError:
+        if fallback is not None:
+            return _get_validated_field(field, default_type=default_type)
         raise NotAllFieldCompiled(f"Field {field} missing or invalid")
 
 
