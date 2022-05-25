@@ -9,7 +9,7 @@ packaging==20.9
 pep517==0.10.0
 pluggy==0.13.1
 py==1.10.0
-PyJWT==2.2.0
+PyJWT==2.4.0
 pyparsing==2.4.7
 pytest==6.2.4
 pytest-django==4.4.0
