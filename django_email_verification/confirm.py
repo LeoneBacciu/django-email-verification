@@ -65,7 +65,7 @@ def send_email_thread(user, token, expiry, sender, domain, subject, mail_plain, 
         logger.error(f'{DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR}: {d}')
         return
 
-    context = {'link': domain + d[0] + token, 'expiry': expiry, 'user': user}
+    context = {'link': domain + d[0] + token.decode('utf-8'), 'expiry': expiry, 'user': user}
 
     subject = Template(subject).render(Context(context))
 
