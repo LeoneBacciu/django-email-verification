@@ -85,6 +85,10 @@ def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_p
     html = render_to_string(mail_html, context)
 
     msg = EmailMultiAlternatives(subject, text, sender, [user.email])
+    if settings.DEBUG:
+        msg.extra_headers['LINK'] = context['link']
+        msg.extra_headers['TOKEN'] = token
+
     msg.attach_alternative(html, 'text/html')
     msg.send()
 
