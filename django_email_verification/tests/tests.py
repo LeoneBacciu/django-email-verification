@@ -145,6 +145,7 @@ def test_email_custom_params(test_user, mailoutbox):
 @pytest.mark.django_db 
 def test_email_extra_headers(settings, mailoutbox):
     settings.DEBUG = True
+    s_expiry = datetime.now()
     send_email(test_user, thread=False, expiry=s_expiry)
     email = mailoutbox[0]
     email_content = email.alternatives[0][0]
