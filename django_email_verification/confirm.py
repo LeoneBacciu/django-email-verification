@@ -48,8 +48,8 @@ def send_inner(user, thread, expiry, kind):
             t.start()
         else:
             send_email_thread(*args)
-        except (Exception, AttributeError) as e:
-            raise InvalidUserModel('The user model you provided is invalid - ' + str(e))
+    except (Exception, AttributeError) as e:
+        raise InvalidUserModel('The user model you provided is invalid - ' + str(e))
 
 
 def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html):
