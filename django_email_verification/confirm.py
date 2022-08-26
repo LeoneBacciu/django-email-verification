@@ -50,8 +50,8 @@ def send_inner(user, thread, expiry, kind):
             send_email_thread(*args)
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
-    except NotAllFieldCompiled:
-        raise NotAllFieldCompiled(f"Field {field} missing or invalid")
+    except NotAllFieldCompiled as e:
+        raise e
     except Exception as e:
         logger.info(repr(e))
 
