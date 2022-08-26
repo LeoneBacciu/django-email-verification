@@ -142,6 +142,18 @@ def test_email_custom_params(test_user, mailoutbox):
     assert s_expiry.time().minute == int(expiry[1])
 
 
+@pytest.mark.django_db 
+def test_email_extra_headers(settings, mailoutbox):
+    settings.DEBUG = True
+    send_email(test_user, thread=False, expiry=s_expiry)
+    email = mailoutbox[0]
+    email_content = email.alternatives[0][0]
+    link = email.extra_headers['LINK']
+    token = email.extra_headers['TOKEN']
+    assert link in email_content
+    assert token in email_content
+
+
 @pytest.mark.django_db
 def test_email_link_correct(test_user, mailoutbox, client):
     test_user.is_active = False
