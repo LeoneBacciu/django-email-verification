@@ -235,6 +235,22 @@ There are two ways to get the token verified:
   The library makes sure one and only one `@verify_view` is present and throws an error if this condition is not met.
 
 
+## Testing
+
+If you are using django-email-verification and you want to test the email, if settings.DEBUG == True, then two items will be added to the email headers.
+You can obtain these by checking the django.core.mail outbox, which will have a non-zero length if an email has been sent.  Retrieve the email and obtain the link (incldues token) or the token to use in your code.
+```python
+from django.core import mail
+
+...test body
+try:
+    email = mail.outbox[0]
+    link = mail.extra_headers['LINK']
+    token = mail.extra_headers['TOKEN']
+    browser.visit(link)  # verifies token...
+except AttributeError:
+    logger.warn("no email")
+```
 
 ## Console backend for development
 
