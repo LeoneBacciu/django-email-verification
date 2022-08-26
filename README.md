@@ -251,6 +251,14 @@ try:
 except AttributeError:
     logger.warn("no email")
 ```
+For the email to be in the inbox, you will need to use the correct email backend.  Use either:
+```
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+```
+or:
+```
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
 
 ## Console backend for development
 
