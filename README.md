@@ -14,6 +14,11 @@ Do you like my work and want to support me?<br/><br/>
 <a href="https://www.buymeacoffee.com/LeoneBacciu" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 </p>
 
+> ## 🚧 Work in progress 🚧
+> The package now also provides all the feature needed for **password recovery**, but the documentation is not ready
+> yet. \
+> Thanks for your patience!
+
 ## Requirements
 
 + Python >= 3.8
