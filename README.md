@@ -277,15 +277,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 You can use all the django email backends and also your custom one.
 
-## Custom salt for token generation
-
-You can define a custom salt to be used in token generation in your settings file. Simply define:
-
-```python
-CUSTOM_SALT = 'xxxxxxxxxxxxxxxxxxxxxxx'
-```
-
-in your settings.py.
 
 ### Logo copyright:
 
