@@ -237,21 +237,28 @@ There are two ways to get the token verified:
 
 ## Testing
 
-If you are using django-email-verification and you want to test the email, if settings.DEBUG == True, then two items will be added to the email headers.
-You can obtain these by checking the django.core.mail outbox, which will have a non-zero length if an email has been sent.  Retrieve the email and obtain the link (incldues token) or the token to use in your code.
+If you are using django-email-verification and you want to test the email, if settings.DEBUG == True, then two items
+will be added to the email headers.
+You can obtain these by checking the django.core.mail outbox, which will have a non-zero length if an email has been
+sent. Retrieve the email and obtain the link (includes token) or the token to use in your code.
+
 ```python
 from django.core import mail
 
-...test body
+...
+test
+body...
+
 try:
-    email = mail.outbox[0]
-    link = mail.extra_headers['LINK']
-    token = mail.extra_headers['TOKEN']
-    browser.visit(link)  # verifies token...
+  email = mail.outbox[0]
+  link = mail.extra_headers['LINK']
+  token = mail.extra_headers['TOKEN']
+  browser.visit(link)  # verifies token...
 except AttributeError:
-    logger.warn("no email")
+  logger.warn("no email")
 ```
-For the email to be in the inbox, you will need to use the correct email backend.  Use either:
+
+For the email to be in the inbox, you will need to use the correct email backend. Use either:
 ```
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 ```
