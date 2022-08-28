@@ -61,8 +61,8 @@ EMAIL_FROM_ADDRESS = 'noreply@aliasaddress.com'
 EMAIL_MAIL_SUBJECT = 'Confirm your email'
 EMAIL_MAIL_HTML = 'mail_body.html'
 EMAIL_MAIL_PLAIN = 'mail_body.txt'
-EMAIL_TOKEN_LIFE = 60 * 60
-EMAIL_PAGE_TEMPLATE = 'confirm_template.html'
+EMAIL_MAIL_TOKEN_LIFE = 60 * 60
+EMAIL_MAIL_PAGE_TEMPLATE = 'confirm_template.html'
 EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
 EMAIL_MULTI_USER = True  # optional (defaults to False)
 
