@@ -41,7 +41,7 @@ def send_inner(user, thread, expiry, kind):
         subject = _get_validated_field(f'EMAIL_{kind}_SUBJECT')
         mail_plain = _get_validated_field(f'EMAIL_{kind}_PLAIN')
         mail_html = _get_validated_field(f'EMAIL_{kind}_HTML')
-        debug = _get_validated_field('DEBUG')
+        debug = _get_validated_field('DEBUG', default_type=bool)
         
         args = (user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug)
         if thread:
