@@ -64,7 +64,6 @@ EMAIL_MAIL_PLAIN = 'mail_body.txt'
 EMAIL_MAIL_TOKEN_LIFE = 60 * 60
 EMAIL_MAIL_PAGE_TEMPLATE = 'confirm_template.html'
 EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
-EMAIL_MULTI_USER = True  # optional (defaults to False)
 
 # For Django Email Backend
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -89,8 +88,6 @@ In detail:
 + `EMAIL_TOKEN_LIFE`: the lifespan of the email link (in seconds).
 + `EMAIL_PAGE_TEMPLATE`: the template of the success/error view.
 + `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain).
-+ `EMAIL_MULTI_USER`: (optional) if `True` an error won't be thrown if multiple users with the same email are present (
-  just one will be activated)
 
 For the Django Email Backend fields look at the
 official [documentation](https://docs.djangoproject.com/en/3.1/topics/email/).

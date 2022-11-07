@@ -236,7 +236,6 @@ def test_email_link_wrong_user(test_user, client, mailoutbox, wrong_token_templa
     response = client.get(url)
     assert response.content.decode() == wrong_token_template
 
-    settings.EMAIL_MULTI_USER = True
     test_user.is_active = False
     send_email(test_user, thread=False)
     email = mailoutbox[0]
@@ -268,7 +267,6 @@ def test_token_expired(test_user, mailoutbox, settings, client, wrong_token_temp
 
 @pytest.mark.django_db
 def test_multi_user(mailoutbox, settings, client):
-    setattr(settings, 'EMAIL_MULTI_USER', True)
     test_user_1 = get_user_model().objects.create(username='test_user_1', password='test_passwd_1',
                                                   email='test@test.com')
     test_user_2 = get_user_model().objects.create(username='test_user_2', password='test_passwd_2',
@@ -277,14 +275,14 @@ def test_multi_user(mailoutbox, settings, client):
     test_user_2.is_active = False
     test_user_1.save()
     test_user_2.save()
-    send_email(test_user_1, thread=False)
+    send_email(test_user_2, thread=False)
     email = mailoutbox[0]
     email_content = email.alternatives[0][0]
     url, _ = get_mail_params(email_content)
     response = client.get(url)
-    match = render_to_string('confirm.html', {'success': True, 'user': test_user_1})
+    match = render_to_string('confirm.html', {'success': True, 'user': test_user_2})
     assert response.content.decode() == match
-    assert list(get_user_model().objects.filter(email='test@test.com').values_list('is_active')) == [(True,), (False,)]
+    assert list(get_user_model().objects.filter(email='test@test.com').values_list('is_active')) == [(False,), (True,)]
 
 
 @pytest.mark.urls('django_email_verification.tests.urls_test_1')
