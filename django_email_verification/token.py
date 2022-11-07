@@ -33,7 +33,7 @@ class EmailVerificationTokenGenerator:
                 expiry (datetime): the expiry datetime
         """
         exp = int(expiry.timestamp()) if isinstance(expiry, datetime) else expiry
-        payload = {'email': user.email, 'exp': exp}
+        payload = {'email': user.email, 'user_id': user.id, 'exp': exp}
         payload.update(**kwargs)
         return jwt.encode(payload, self.secret, algorithm='HS256'), datetime.fromtimestamp(exp)
 
@@ -52,16 +52,13 @@ class EmailVerificationTokenGenerator:
 
         try:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
-            email, exp = payload['email'], payload['exp']
+            email, user_id, exp = payload['email'], payload['user_id'], payload['exp']
 
             for k, v in kwargs.items():
                 if payload[k] != v:
                     return False, None
 
-            if hasattr(settings, 'EMAIL_MULTI_USER') and settings.EMAIL_MULTI_USER:
-                users = get_user_model().objects.filter(email=email)
-            else:
-                users = [get_user_model().objects.get(email=email)]
+            users = [get_user_model().objects.get(email=email, id=user_id)]
         except (ValueError, get_user_model().DoesNotExist, jwt.DecodeError, jwt.ExpiredSignatureError):
             return False, None
 
