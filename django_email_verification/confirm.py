@@ -20,15 +20,15 @@ DJANGO_EMAIL_VERIFICATION_NO_VIEWS_INFO = 'INFO: no verify view found'
 DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING = 'WARNING: found verify view without parameter'
 
 
-def send_email(user, thread=True, expiry=None):
-    send_inner(user, thread, expiry, 'MAIL')
+def send_email(user, thread=True, expiry=None, context=None):
+    send_inner(user, thread, expiry, 'MAIL', context)
 
 
-def send_password(user, thread=True, expiry=None):
-    send_inner(user, thread, expiry, 'PASSWORD')
+def send_password(user, thread=True, expiry=None, context=None):
+    send_inner(user, thread, expiry, 'PASSWORD', context)
 
 
-def send_inner(user, thread, expiry, kind):
+def send_inner(user, thread, expiry, kind, context=None):
     try:
         user.save()
 
@@ -42,7 +42,7 @@ def send_inner(user, thread, expiry, kind):
         mail_plain = _get_validated_field(f'EMAIL_{kind}_PLAIN')
         mail_html = _get_validated_field(f'EMAIL_{kind}_HTML')
 
-        args = (user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html)
+        args = (user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, context)
         if thread:
             t = Thread(target=send_email_thread, args=args)
             t.start()
@@ -56,8 +56,11 @@ def send_inner(user, thread, expiry, kind):
         logger.info(repr(e))
 
 
-def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html):
+def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, context=None):
     domain += '/' if not domain.endswith('/') else ''
+
+    if context is None:
+        context = {}
 
     def has_decorator(k):
         if callable(k):
@@ -75,7 +78,7 @@ def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_p
         logger.error(f'{DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR}: {d}')
         return
 
-    context = {'token': token, 'expiry': expiry, 'user': user}
+    context.update({'token': token, 'expiry': expiry, 'user': user})
 
     if len(d) < 1:
         logger.info(DJANGO_EMAIL_VERIFICATION_NO_VIEWS_INFO)
