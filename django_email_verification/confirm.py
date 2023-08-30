@@ -12,7 +12,7 @@ from django.urls import get_resolver
 from django.utils import timezone
 
 from .errors import InvalidUserModel, NotAllFieldCompiled
-from .token import default_token_generator
+from .token_utils import default_token_generator
 
 logger = logging.getLogger('django_email_verification')
 DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR = 'ERROR: more than one verify view found'
