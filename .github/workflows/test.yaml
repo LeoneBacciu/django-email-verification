@@ -18,7 +18,7 @@ jobs:
     - name: Run tests
       run: coverage run --source=django_email_verification -m pytest
 
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v3
       with:
         name: codecov-umbrella
         fail_ci_if_error: true
