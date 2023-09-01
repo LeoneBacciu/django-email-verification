@@ -86,8 +86,8 @@ In detail:
     * `SUBJECT`: the mail default subject.
     * `HTML`: the mail body template in form of html.
     * `PLAIN`: the mail body template in form of .txt file.
-+ `EMAIL_TOKEN_LIFE`: the lifespan of the email link (in seconds).
-+ `EMAIL_PAGE_TEMPLATE`: the template of the success/error view.
++ `EMAIL_MAIL_TOKEN_LIFE`: the lifespan of the email link (in seconds).
++ `EMAIL_MAIL_PAGE_TEMPLATE`: the template of the success/error view.
 + `EMAIL_PAGE_DOMAIN`: the domain of the confirmation link (usually your site's domain).
 + `EMAIL_MULTI_USER`: (optional) if `True` an error won't be thrown if multiple users with the same email are present (
   just one will be activated)
@@ -103,15 +103,15 @@ The function will receive no arguments.
 
 ## Templates examples
 
-The `EMAIL_MAIL_SUBJECT` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
-passed during the rendering):
+The `EMAIL_MAIL_SUBJECT` should look like this; (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
+passed during the rendering).
 
 ```python
 EMAIL_MAIL_SUBJECT = 'Confirm your email {{ user.username }}'
 ```
 
-The `EMAIL_MAIL_HTML` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
-passed during the rendering):
+The `EMAIL_MAIL_HTML` should look like this; (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
+passed during the rendering).
 
 ```html
 <h1>You are almost there, {{ user.username }}!</h1><br>
@@ -119,8 +119,8 @@ passed during the rendering):
 <h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
 ```
 
-The `EMAIL_MAIL_PLAIN` should look like this (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
-passed during the rendering):
+The `EMAIL_MAIL_PLAIN` should look like this; (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
+passed during the rendering).
 
 ```text
 You are almost there, {{ user.username }}!
@@ -128,8 +128,8 @@ Please click the following link to confirm your account: {{ link }}
 The token expires on {{ expiry|time:"TIME_FORMAT" }}
 ```
 
-The `EMAIL_PAGE_TEMPLATE` should look like this (`{{ success }}`(`bool`), `{{ user }}`(`Model`)
-and `{{ request }}`(`WSGIRequest`) are passed during the rendering):
+The `EMAIL_MAIL_PAGE_TEMPLATE` should look like this; (`{{ success }}`(`bool`), `{{ user }}`(`Model`)
+and `{{ request }}`(`WSGIRequest`) are passed during the rendering).
 
 ```html
 <!DOCTYPE html>
@@ -206,8 +206,8 @@ There are two ways to get the token verified:
   ```
   When a request arrives to `https.//mydomain.com/email/<token>` the package verifies the token and:
 
-  + if it corresponds to a pending token it renders the `EMAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
-  + if it doesn't correspond it renders the `EMAIL_PAGE_TEMPLATE` passing `success=False`
+  + if it corresponds to a pending token it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=True` and deletes the token
+  + if it doesn't correspond it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=False`
 
 
 + The second one is more customizable: you can build your own view for verification, mark it as `@verify_view`, verify the token manually with the function `verify_token(token)` and execute your custom logic,
@@ -285,7 +285,7 @@ You can use all the django email backends and also your custom one.
 
 ### Logo copyright:
 
-Logo by by <a href="https://github.com/filippoveggo" title="Flippo Veggo">Filippo Veggo</a>
+Logo by <a href="https://github.com/filippoveggo" title="Flippo Veggo">Filippo Veggo</a>
 <div>"Django and the Django logo are registered trademarks of Django Software Foundation.<br/>Usage of the Django trademarks are subject to the Django Trademark licensing Agreement."</div>
 <div>Icons made by <a href="https://www.flaticon.com/authors/kiranshastry" title="Kiranshastry">Kiranshastry</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 <div>Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pixel perfect">Pixel perfect</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
