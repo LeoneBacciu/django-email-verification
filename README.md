@@ -1,9 +1,9 @@
 # Django Email Verification
 
-[![PyPI](https://img.shields.io/pypi/v/django-email-verification?color=yellowgreen&logo=pypi)](https://pypi.org/project/django-email-verification/)
-[![PyPI - License](https://img.shields.io/pypi/l/django-email-verification?logo=open-source-initiative)](https://github.com/LeoneBacciu/django-email-verification/blob/version-0.1.0/LICENSE)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/LeoneBacciu/django-email-verification/Upload%20Python%20Package?logo=github-actions)](https://github.com/LeoneBacciu/django-email-verification/actions)
-[![codecov](https://codecov.io/gh/LeoneBacciu/django-email-verification/branch/master/graph/badge.svg?token=97DDVD3MGW)](https://codecov.io/gh/LeoneBacciu/django-email-verification)
+[![PyPI](https://img.shields.io/pypi/v/django-email-verification?style=flat-square&logo=pypi&color=yellow)](https://pypi.org/project/django-email-verification/)
+[![PyPI - License](https://img.shields.io/pypi/l/django-email-verification?style=flat-square&logo=open-source-initiative)](https://github.com/LeoneBacciu/django-email-verification/blob/version-0.1.0/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/LeoneBacciu/django-email-verification/test.yaml?style=flat-square&logo=github-actions)](https://github.com/LeoneBacciu/django-email-verification/actions)
+[![codecov](https://img.shields.io/codecov/c/github/LeoneBacciu/django-email-verification?token=97DDVD3MGW&style=flat-square&logo=codecov)](https://codecov.io/gh/LeoneBacciu/django-email-verification)
 
 <p align="center">
   <img src="https://github.com/LeoneBacciu/django-email-verification/blob/master/icon.png?raw=True" width="300px" alt="icon">
@@ -22,7 +22,7 @@ Do you like my work and want to support me?<br/><br/>
 ## Requirements
 
 + Python >= 3.8
-+ Django >= 3.1
++ Django >= 4.2
 
 ## General concept
 
