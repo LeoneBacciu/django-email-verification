@@ -41,8 +41,9 @@ def send_inner(user, thread, expiry, kind, context=None):
         subject = _get_validated_field(f'EMAIL_{kind}_SUBJECT')
         mail_plain = _get_validated_field(f'EMAIL_{kind}_PLAIN')
         mail_html = _get_validated_field(f'EMAIL_{kind}_HTML')
+        debug = _get_validated_field('DEBUG', default_type=bool)
 
-        args = (user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, context)
+        args = (user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug, context)
         if thread:
             t = Thread(target=send_email_thread, args=args)
             t.start()
@@ -56,7 +57,8 @@ def send_inner(user, thread, expiry, kind, context=None):
         logger.info(repr(e))
 
 
-def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, context=None):
+def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug=False,
+                      context=None):
     domain += '/' if not domain.endswith('/') else ''
 
     if context is None:
@@ -92,7 +94,7 @@ def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_p
     html = render_to_string(mail_html, context)
 
     msg = EmailMultiAlternatives(subject, text, sender, [user.email])
-    if settings.DEBUG:
+    if debug:
         msg.extra_headers['LINK'] = context['link']
         msg.extra_headers['TOKEN'] = token
 
