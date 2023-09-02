@@ -187,6 +187,10 @@ class MyClassView(FormView):
         return returnVal
 ```
 
+> **NOTE**: By default the email is sent asynchronously, which is the suggested behaviour, if this is a problem (for example if you are running synchronous tests), you can pass the parameter `thread`: 
+>
+>     send_email(user, thread=False) # When this function returns, the email has been sent
+
 ## Token verification
 
 There are two ways to get the token verified:
