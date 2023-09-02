@@ -29,6 +29,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [ test ]
+    environment:
+      name: pypi
+      url: https://pypi.org/p/django-email-verification/
+    permissions:
+      id-token: write
 
     steps:
     - uses: actions/checkout@v3
