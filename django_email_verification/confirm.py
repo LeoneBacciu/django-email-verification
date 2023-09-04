@@ -4,20 +4,21 @@ from threading import Thread
 from typing import Callable
 
 import deprecation
+import validators
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template import Template, Context
 from django.template.loader import render_to_string
 from django.urls import get_resolver
-from django.utils import timezone
 
 from .errors import InvalidUserModel, NotAllFieldCompiled
 from .token_utils import default_token_generator
 
 logger = logging.getLogger('django_email_verification')
 DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR = 'ERROR: more than one verify view found'
-DJANGO_EMAIL_VERIFICATION_NO_VIEWS_INFO = 'INFO: no verify view found'
+DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR = 'ERROR: no verify view found'
 DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING = 'WARNING: found verify view without parameter'
+DJANGO_EMAIL_VERIFICATION_MALFORMED_URL = 'WARNING: the URL seems to be malformed'
 
 
 def send_email(user, thread=True, expiry=None, context=None):
@@ -45,10 +46,10 @@ def send_inner(user, thread, expiry, kind, context=None):
 
         args = (user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug, context)
         if thread:
-            t = Thread(target=send_email_thread, args=args)
+            t = Thread(target=send_inner_thread, args=args)
             t.start()
         else:
-            send_email_thread(*args)
+            send_inner_thread(*args)
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
     except NotAllFieldCompiled as e:
@@ -57,12 +58,14 @@ def send_inner(user, thread, expiry, kind, context=None):
         logger.info(repr(e))
 
 
-def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug=False,
+def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug=False,
                       context=None):
     domain += '/' if not domain.endswith('/') else ''
 
     if context is None:
         context = {}
+
+    context.update({'token': token, 'expiry': expiry, 'user': user})
 
     def has_decorator(k):
         if callable(k):
@@ -70,22 +73,23 @@ def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_p
         return False
 
     d = [v[0][0] for k, v in get_resolver(None).reverse_dict.items() if has_decorator(k)]
-    w = [a[0] for a in d if a[1] == []]
-    d = [a[0][:a[0].index('%')] for a in d if a[1] != []]
+    w = [a[0] for a in d if not len(a[1])]
+    d = [a[0][:a[0].index('%')] for a in d if len(a[1])]
 
-    if len(w) > 0:
+    if len(d) < 1:
         logger.warning(f'{DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING}: {w}')
 
     if len(d) > 1:
         logger.error(f'{DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR}: {d}')
         return
 
-    context.update({'token': token, 'expiry': expiry, 'user': user})
-
     if len(d) < 1:
-        logger.info(DJANGO_EMAIL_VERIFICATION_NO_VIEWS_INFO)
+        logger.error(DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR)
+        return
     else:
         context['link'] = domain + d[0] + token
+        if not validators.url(context['link']):
+            logger.warning(f'{DJANGO_EMAIL_VERIFICATION_MALFORMED_URL} - {context["link"]}')
 
     subject = Template(subject).render(Context(context))
 
@@ -94,6 +98,7 @@ def send_email_thread(user, kind, token, expiry, sender, domain, subject, mail_p
     html = render_to_string(mail_html, context)
 
     msg = EmailMultiAlternatives(subject, text, sender, [user.email])
+
     if debug:
         msg.extra_headers['LINK'] = context['link']
         msg.extra_headers['TOKEN'] = token
@@ -116,20 +121,6 @@ def _get_validated_field(field, fallback=None, default_type=None):
         raise NotAllFieldCompiled(f"Field {field} missing or invalid")
 
 
-def verify_password(token, password):
-    valid, user = default_token_generator.check_token(token, kind='PASSWORD')
-    if valid:
-        callback = _get_validated_field('EMAIL_PASSWORD_CHANGED_CALLBACK', default_type=Callable)
-        if hasattr(user, callback.__name__):
-            getattr(user, callback.__name__)(password)
-        else:
-            callback(user, password)
-        user.last_login = timezone.now()
-        user.save()
-        return valid, user
-    return False, None
-
-
 def verify_email(token):
     valid, user = default_token_generator.check_token(token, kind='MAIL')
     if valid:
@@ -138,7 +129,19 @@ def verify_email(token):
             getattr(user, callback.__name__)()
         else:
             callback(user)
-        user.last_login = timezone.now()
+        user.save()
+        return valid, user
+    return False, None
+
+
+def verify_password(token, password):
+    valid, user = default_token_generator.check_token(token, kind='PASSWORD')
+    if valid:
+        callback = _get_validated_field('EMAIL_PASSWORD_CHANGED_CALLBACK', default_type=Callable)
+        if hasattr(user, callback.__name__):
+            getattr(user, callback.__name__)(password)
+        else:
+            callback(user, password)
         user.save()
         return valid, user
     return False, None

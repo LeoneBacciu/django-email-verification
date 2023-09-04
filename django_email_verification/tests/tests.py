@@ -12,7 +12,8 @@ from django.test import Client
 
 from django_email_verification import send_password, send_email
 from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
-    DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING
+    DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING, DJANGO_EMAIL_VERIFICATION_MALFORMED_URL, \
+    DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR
 from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
 
 
@@ -35,10 +36,7 @@ def get_mail_params(content):
     expiry = re.findall(r'\d{1,2}:\d{1,2}', content)[0]
     url = re.findall(r'(http|https)://([\w_-]+(?:\.[\w_-]+)+)([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?',
                      content)
-    if len(url) > 0:
-        url = url[0][-1]
-    else:
-        url = ''
+    url = url[0][-1] if len(url) > 0 else ''
     return url, expiry
 
 
@@ -142,7 +140,7 @@ def test_email_custom_params(test_user, mailoutbox):
     assert s_expiry.time().minute == int(expiry[1])
 
 
-@pytest.mark.django_db 
+@pytest.mark.django_db
 def test_email_extra_headers(test_user, settings, mailoutbox):
     settings.DEBUG = True
     s_expiry = datetime.now()
@@ -289,7 +287,7 @@ def test_multi_user(mailoutbox, settings, client):
 
 @pytest.mark.urls('django_email_verification.tests.urls_test_1')
 @pytest.mark.django_db
-def test_too_many_verify_view(test_user):
+def test_log_too_many_verify_view(test_user):
     error_raised = False
 
     def raise_error():
@@ -306,22 +304,24 @@ def test_too_many_verify_view(test_user):
 
 @pytest.mark.urls('django_email_verification.tests.urls_test_2')
 @pytest.mark.django_db
-def test_no_verify_view(test_user, mailoutbox):
+def test_log_no_verify_view(test_user):
+    warning_raised = False
+
+    def raise_warning():
+        nonlocal warning_raised
+        warning_raised = True
+
+    handler = LogHandler('ERROR', DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR, raise_warning)
+    logger = logging.getLogger('django_email_verification')
+    logger.addHandler(handler)
+    test_user.is_active = False
     send_email(test_user, thread=False)
-    email = mailoutbox[0]
-    email_content = email.alternatives[0][0]
-    url, expiry = get_mail_params(email_content)
-
-    assert email.subject == re.sub(r'({{.*}})', test_user.username,
-                                   settings.EMAIL_MAIL_SUBJECT), "The subject changed"
-    assert email.from_email == settings.EMAIL_FROM_ADDRESS, "The from_address changed"
-    assert email.to == [test_user.email], "The to_address changed"
-    assert len(expiry) > 0, f"No expiry time detected, {email_content}"
-    assert len(url) == 0, "Random link detected"
+    assert warning_raised, 'No warning raised if no view is found'
 
 
+@pytest.mark.urls('django_email_verification.tests.urls_test_3')
 @pytest.mark.django_db
-def test_incomplete_verify_view(test_user):
+def test_log_incomplete_verify_view(test_user):
     warning_raised = False
 
     def raise_warning():
@@ -334,6 +334,23 @@ def test_incomplete_verify_view(test_user):
     test_user.is_active = False
     send_email(test_user, thread=False)
     assert warning_raised, 'No warning raised if incomplete urls are found'
+
+
+@pytest.mark.django_db
+def test_log_malformed_link(test_user, settings):
+    setattr(settings, 'EMAIL_PAGE_DOMAIN', 'abcd')
+    warning_raised = False
+
+    def raise_warning():
+        nonlocal warning_raised
+        warning_raised = True
+
+    handler = LogHandler('WARNING', DJANGO_EMAIL_VERIFICATION_MALFORMED_URL, raise_warning)
+    logger = logging.getLogger('django_email_verification')
+    logger.addHandler(handler)
+    test_user.is_active = False
+    send_email(test_user, thread=False)
+    assert warning_raised, 'No warning raised if malformed url is not detected'
 
 
 @pytest.mark.django_db

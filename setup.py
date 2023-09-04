@@ -5,7 +5,7 @@ with open("LONG_DESCRIPTION.md", "r") as fh:
 
 setuptools.setup(
     name="django-email-verification",
-    version="0.3.2",
+    version="0.3.3",
     author="Leone Bacciu",
     author_email="leonebacciu@gmail.com",
     description="Email confirmation app for django",
@@ -16,7 +16,8 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=['django_email_verification.tests']),
     install_requires=[
         'deprecation',
-        'PyJWT'
+        'PyJWT',
+        'validators'
     ],
     classifiers=[
         "Environment :: Web Environment",
