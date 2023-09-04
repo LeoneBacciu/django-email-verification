@@ -137,7 +137,7 @@ def verify_email(token):
 def verify_password(token, password):
     valid, user = default_token_generator.check_token(token, kind='PASSWORD')
     if valid:
-        callback = _get_validated_field('EMAIL_PASSWORD_CHANGED_CALLBACK', default_type=Callable)
+        callback = _get_validated_field('EMAIL_PASSWORD_CHANGE_CALLBACK', default_type=Callable)
         if hasattr(user, callback.__name__):
             getattr(user, callback.__name__)(password)
         else:

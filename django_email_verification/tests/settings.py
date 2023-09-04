@@ -60,7 +60,7 @@ def changePassword(user, password):
 
 
 EMAIL_VERIFIED_CALLBACK = verified
-EMAIL_PASSWORD_CHANGED_CALLBACK = changePassword
+EMAIL_PASSWORD_CHANGE_CALLBACK = changePassword
 
 EMAIL_FROM_ADDRESS = 'rousseau.platform@gmail.com'
 

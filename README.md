@@ -98,19 +98,32 @@ INSTALLED_APPS = [
 You have to add these parameters to the settings, you have to include all of them except the last one:
 
 ```python
-def verified_callback(user):
+def email_verified_callback(user):
     user.is_active = True
+    
+def password_change_callback(user, password):
+  user.set_password(password)
 
 
-EMAIL_VERIFIED_CALLBACK = verified_callback
 EMAIL_FROM_ADDRESS = 'noreply@aliasaddress.com'
-EMAIL_MAIL_SUBJECT = 'Confirm your email'
+EMAIL_PAGE_DOMAIN = 'https://mydomain.com/'
+EMAIL_MULTI_USER = False  # optional (defaults to False)
+
+EMAIL_MAIL_SUBJECT = 'Confirm your email {{ user.username }}'
 EMAIL_MAIL_HTML = 'mail_body.html'
 EMAIL_MAIL_PLAIN = 'mail_body.txt'
-EMAIL_MAIL_TOKEN_LIFE = 60 * 60
-EMAIL_MAIL_PAGE_TEMPLATE = 'confirm_template.html'
-EMAIL_PAGE_DOMAIN = 'http://mydomain.com/'
-EMAIL_MULTI_USER = True  # optional (defaults to False)
+EMAIL_MAIL_PAGE_TEMPLATE = 'email_success_template.html'
+EMAIL_MAIL_TOKEN_LIFE = 60 * 60 # one hour
+EMAIL_VERIFIED_CALLBACK = email_verified_callback
+
+EMAIL_PASSWORD_SUBJECT = 'Change your password {{ user.username }}'
+EMAIL_PASSWORD_HTML = 'password_body.html'
+EMAIL_PASSWORD_PLAIN = 'password_body.txt'
+EMAIL_PASSWORD_PAGE_TEMPLATE = 'password_change_template.html'
+EMAIL_PASSWORD_CHANGED_PAGE_TEMPLATE = 'password_changed_template.html'
+EMAIL_PASSWORD_TOKEN_LIFE = 60 * 10 # 10 minutes
+EMAIL_PASSWORD_CHANGE_CALLBACK = password_change_callback
+
 
 # For Django Email Backend
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

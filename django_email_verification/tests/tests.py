@@ -103,7 +103,7 @@ def test_user_with_class_method(settings):
     get_user_model().add_to_class('verified_callback', verified_callback)
     get_user_model().add_to_class('password_changed', password_changed)
     settings.EMAIL_VERIFIED_CALLBACK = get_user_model().verified_callback
-    settings.EMAIL_PASSWORD_CHANGED_CALLBACK = get_user_model().password_changed
+    settings.EMAIL_PASSWORD_CHANGE_CALLBACK = get_user_model().password_changed
     user = get_user_model()(username='test_user_with_class_method', password='test_passwd', email='test@test.com')
     return user
 
@@ -374,7 +374,7 @@ def test_password_correct(test_user, mailoutbox, client):
 @pytest.mark.django_db
 def test_password_correct_user_model_method(test_user_with_class_method, mailoutbox, client):
     test_user_with_class_method.is_active = False
-    assert hasattr(get_user_model(), settings.EMAIL_PASSWORD_CHANGED_CALLBACK.__name__)
+    assert hasattr(get_user_model(), settings.EMAIL_PASSWORD_CHANGE_CALLBACK.__name__)
     check_password_change(test_user_with_class_method, mailoutbox, client)
 
 
