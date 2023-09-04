@@ -26,7 +26,53 @@ Do you like my work and want to support me?<br/><br/>
 
 ## General concept
 
-![Schema](https://github.com/LeoneBacciu/django-email-verification/blob/master/email_flow.png?raw=True "Flow")
+
+Here is a simple Sequence Diagram of the email verification process:
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant D as django-email-verification
+    participant C as Your Code
+    
+    U -->> C: Creates an Account
+    note over C: Set User as inactive
+    C ->> D: Call send_email
+    D -)+ U: Email with Activation Link
+    U -)- C: Link clicked
+    C ->> D: Request forwarded
+    critical Token Validation
+       option Valid 
+           D ->> C: Run Callback
+           D ->> U: Render Success Page
+       option Invalid
+           D ->> U: Render Error Page
+    end
+```
+
+And here is a simple Sequence Diagram of the password recovery process:
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant D as django-email-verification
+    participant C as Your Code
+    
+    U -->> C: Click on Recover Password
+    C ->> D: Call send_password
+    D -)+ U: Email with Password Change Link
+    U -)- C: Link clicked
+    C ->> D: Request forwarded
+    critical Token Validation
+       option Valid 
+           D ->> U: Render Password Change View
+           U ->> D: Submit new Password
+           D ->> C: Run Callback
+           D ->> U: Render Success Page
+       option Invalid
+           D ->> U: Render Error Page
+    end
+```
 
 ## Installation
 
@@ -228,9 +274,11 @@ There are two ways to get the token verified:
   def confirm(request, token):
       success, user = verify_token(token)
       return HttpResponse(f'Account verified, {user.username}' if success else 'Invalid token')
+  ```
 
-
+  ```python
   ### For the urls
+  
   from django.urls import path
 
   urlpatterns = [
@@ -256,7 +304,8 @@ from django.core import mail
 
 ...
 test
-body...
+body
+...
 
 try:
   email = mail.outbox[0]
@@ -268,24 +317,21 @@ except AttributeError:
 ```
 
 For the email to be in the inbox, you will need to use the correct email backend. Use either:
-```
+```python
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 ```
 or:
-```
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-```
-
-## Console backend for development
-
-If you want to use the console email backend provided by django, then define:
-
 ```python
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ```
 
-You can use all the django email backends and also your custom one.
+You can use any Django email backend and also your custom one.
 
+If you want to run the builtin tests, clone the project and execute:
+```commandline
+coverage run --source=django_email_verification -m pytest && coverage report -m
+```
+(You will need [coverage](https://pypi.org/project/coverage/), [pytest](https://pypi.org/project/pytest/) and [pytest-django](https://pypi.org/project/pytest-django/))
 
 ### Logo copyright:
 
