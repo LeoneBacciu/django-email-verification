@@ -59,8 +59,8 @@ def changePassword(user, password):
     user.set_password(password)
 
 
-EMAIL_VERIFIED_CALLBACK = verified
-EMAIL_PASSWORD_CHANGE_CALLBACK = changePassword
+EMAIL_MAIL_CALLBACK = verified
+EMAIL_PASSWORD_CALLBACK = changePassword
 
 EMAIL_FROM_ADDRESS = 'rousseau.platform@gmail.com'
 

@@ -12,8 +12,7 @@ from django.test import Client
 
 from django_email_verification import send_password, send_email
 from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
-    DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING, DJANGO_EMAIL_VERIFICATION_MALFORMED_URL, \
-    DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR
+    DJANGO_EMAIL_VERIFICATION_MALFORMED_URL
 from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
 
 
@@ -102,8 +101,8 @@ def test_user_with_class_method(settings):
 
     get_user_model().add_to_class('verified_callback', verified_callback)
     get_user_model().add_to_class('password_changed', password_changed)
-    settings.EMAIL_VERIFIED_CALLBACK = get_user_model().verified_callback
-    settings.EMAIL_PASSWORD_CHANGE_CALLBACK = get_user_model().password_changed
+    settings.EMAIL_MAIL_CALLBACK = get_user_model().verified_callback
+    settings.EMAIL_PASSWORD_CALLBACK = get_user_model().password_changed
     user = get_user_model()(username='test_user_with_class_method', password='test_passwd', email='test@test.com')
     return user
 
@@ -180,7 +179,7 @@ def test_email_correct(test_user, mailoutbox, client):
 @pytest.mark.django_db
 def test_email_correct_user_model_method(test_user_with_class_method, mailoutbox, client):
     test_user_with_class_method.is_active = False
-    assert hasattr(get_user_model(), settings.EMAIL_VERIFIED_CALLBACK.__name__)
+    assert hasattr(get_user_model(), settings.EMAIL_MAIL_CALLBACK.__name__)
     check_email_verification(test_user_with_class_method, mailoutbox, client)
 
 
@@ -299,40 +298,6 @@ def test_log_too_many_verify_view(test_user):
     assert error_raised, 'No error raised if multiple views are found'
 
 
-@pytest.mark.urls('django_email_verification.tests.urls_test_2')
-@pytest.mark.django_db
-def test_log_no_verify_view(test_user):
-    warning_raised = False
-
-    def raise_warning():
-        nonlocal warning_raised
-        warning_raised = True
-
-    handler = LogHandler('ERROR', DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR, raise_warning)
-    logger = logging.getLogger('django_email_verification')
-    logger.addHandler(handler)
-    test_user.is_active = False
-    send_email(test_user, thread=False)
-    assert warning_raised, 'No warning raised if no view is found'
-
-
-@pytest.mark.urls('django_email_verification.tests.urls_test_3')
-@pytest.mark.django_db
-def test_log_incomplete_verify_view(test_user):
-    warning_raised = False
-
-    def raise_warning():
-        nonlocal warning_raised
-        warning_raised = True
-
-    handler = LogHandler('WARNING', DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING, raise_warning)
-    logger = logging.getLogger('django_email_verification')
-    logger.addHandler(handler)
-    test_user.is_active = False
-    send_email(test_user, thread=False)
-    assert warning_raised, 'No warning raised if incomplete urls are found'
-
-
 @pytest.mark.django_db
 def test_log_malformed_link(test_user, settings):
     setattr(settings, 'EMAIL_PAGE_DOMAIN', 'abcd')
@@ -374,7 +339,7 @@ def test_password_correct(test_user, mailoutbox, client):
 @pytest.mark.django_db
 def test_password_correct_user_model_method(test_user_with_class_method, mailoutbox, client):
     test_user_with_class_method.is_active = False
-    assert hasattr(get_user_model(), settings.EMAIL_PASSWORD_CHANGE_CALLBACK.__name__)
+    assert hasattr(get_user_model(), settings.EMAIL_PASSWORD_CALLBACK.__name__)
     check_password_change(test_user_with_class_method, mailoutbox, client)
 
 

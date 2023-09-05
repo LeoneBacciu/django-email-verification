@@ -16,8 +16,6 @@ from .token_utils import default_token_generator
 
 logger = logging.getLogger('django_email_verification')
 DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR = 'ERROR: more than one verify view found'
-DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR = 'ERROR: no verify view found'
-DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING = 'WARNING: found verify view without parameter'
 DJANGO_EMAIL_VERIFICATION_MALFORMED_URL = 'WARNING: the URL seems to be malformed'
 
 
@@ -33,7 +31,7 @@ def send_inner(user, thread, expiry, kind, context=None):
     try:
         user.save()
 
-        exp = expiry if expiry is not None else _get_validated_field(f'EMAIL_{kind}_TOKEN_LIFE', 'EMAIL_TOKEN_LIFE',
+        exp = expiry if expiry is not None else _get_validated_field(f'EMAIL_{kind}_TOKEN_LIFE',
                                                                      default_type=int) + default_token_generator.now()
         token, expiry = default_token_generator.make_token(user, exp, kind=kind)
 
@@ -55,11 +53,10 @@ def send_inner(user, thread, expiry, kind, context=None):
     except NotAllFieldCompiled as e:
         raise e
     except Exception as e:
-        logger.info(repr(e))
+        logger.error(repr(e))
 
 
-def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug=False,
-                      context=None):
+def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_plain, mail_html, debug, context):
     domain += '/' if not domain.endswith('/') else ''
 
     if context is None:
@@ -73,20 +70,13 @@ def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_p
         return False
 
     d = [v[0][0] for k, v in get_resolver(None).reverse_dict.items() if has_decorator(k)]
-    w = [a[0] for a in d if not len(a[1])]
     d = [a[0][:a[0].index('%')] for a in d if len(a[1])]
-
-    if len(d) < 1:
-        logger.warning(f'{DJANGO_EMAIL_VERIFICATION_NO_PARAMETER_WARNING}: {w}')
 
     if len(d) > 1:
         logger.error(f'{DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR}: {d}')
         return
 
-    if len(d) < 1:
-        logger.error(DJANGO_EMAIL_VERIFICATION_NO_VIEWS_ERROR)
-        return
-    else:
+    if len(d) >= 1:
         context['link'] = domain + d[0] + token
         if not validators.url(context['link']):
             logger.warning(f'{DJANGO_EMAIL_VERIFICATION_MALFORMED_URL} - {context["link"]}')
@@ -107,24 +97,24 @@ def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_p
     msg.send()
 
 
-def _get_validated_field(field, fallback=None, default_type=None):
+def _get_validated_field(field, default=None, use_default=False, default_type=None):
     if default_type is None:
         default_type = str
     try:
         d = getattr(settings, field)
         if d == "" or d is None or not isinstance(d, default_type):
-            raise AttributeError
+            raise AttributeError(f'Wrong value for field {field}')
         return d
     except AttributeError:
-        if fallback is not None:
-            return _get_validated_field(field, default_type=default_type)
-        raise NotAllFieldCompiled(f"Field {field} missing or invalid")
+        if use_default:
+            return default
+        raise NotAllFieldCompiled(f'Field {field} missing or invalid')
 
 
 def verify_email(token):
     valid, user = default_token_generator.check_token(token, kind='MAIL')
     if valid:
-        callback = _get_validated_field('EMAIL_VERIFIED_CALLBACK', default_type=Callable)
+        callback = _get_validated_field('EMAIL_MAIL_CALLBACK', default_type=Callable)
         if hasattr(user, callback.__name__):
             getattr(user, callback.__name__)()
         else:
@@ -137,7 +127,7 @@ def verify_email(token):
 def verify_password(token, password):
     valid, user = default_token_generator.check_token(token, kind='PASSWORD')
     if valid:
-        callback = _get_validated_field('EMAIL_PASSWORD_CHANGE_CALLBACK', default_type=Callable)
+        callback = _get_validated_field('EMAIL_PASSWORD_CALLBACK', default_type=Callable)
         if hasattr(user, callback.__name__):
             getattr(user, callback.__name__)(password)
         else:
