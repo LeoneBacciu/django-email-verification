@@ -97,7 +97,7 @@ def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_p
     msg.send()
 
 
-def _get_validated_field(field, default=None, use_default=False, default_type=None):
+def _get_validated_field(field, default_type=None):
     if default_type is None:
         default_type = str
     try:
@@ -106,8 +106,6 @@ def _get_validated_field(field, default=None, use_default=False, default_type=No
             raise AttributeError(f'Wrong value for field {field}')
         return d
     except AttributeError:
-        if use_default:
-            return default
         raise NotAllFieldCompiled(f'Field {field} missing or invalid')
 
 
@@ -138,7 +136,7 @@ def verify_password(token, password):
 
 
 @deprecation.deprecated(deprecated_in='0.3.0', details='use either verify_email() or verify_password()')
-def verify_token(token):
+def verify_token(token):  # pragma: no cover
     return verify_email(token)
 
 
@@ -163,7 +161,7 @@ def verify_password_view(func):
 
 
 @deprecation.deprecated(deprecated_in='0.3.0', details='use either verify_email_view() or verify_password_view()')
-def verify_view(func):
+def verify_view(func):  # pragma: no cover
     func.django_email_verification_mail_view_id = True
 
     @functools.wraps(func)
