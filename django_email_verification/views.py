@@ -24,8 +24,8 @@ def verify_password_page(request: WSGIRequest, token):
     try:
         if request.method == 'POST' and (pwd := request.POST.get('password')) is not None:
             success, user = verify_password(token, pwd)
-            return render(request, settings.EMAIL_PASSWORD_CHANGED_PAGE_TEMPLATE,
+            return render(request, settings.EMAIL_PASSWORD_PAGE_TEMPLATE,
                           {'success': success, 'user': user, 'request': request})
-        return render(request, settings.EMAIL_PASSWORD_PAGE_TEMPLATE, {'token': token})
+        return render(request, settings.EMAIL_PASSWORD_CHANGE_PAGE_TEMPLATE, {'token': token, 'request': request})
     except (AttributeError, TypeError):
         raise NotAllFieldCompiled('EMAIL_PASSWORD templates field not found')

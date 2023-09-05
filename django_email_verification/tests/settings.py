@@ -74,8 +74,8 @@ EMAIL_PASSWORD_SUBJECT = 'Confirm your password change {{ user.username }}'
 EMAIL_PASSWORD_HTML = 'password.html'
 EMAIL_PASSWORD_PLAIN = 'plainpassword.txt'
 
-EMAIL_PASSWORD_CHANGED_PAGE_TEMPLATE = 'password_changed.html'
-EMAIL_PASSWORD_PAGE_TEMPLATE = 'password_change.html'
+EMAIL_PASSWORD_PAGE_TEMPLATE = 'password_changed.html'
+EMAIL_PASSWORD_CHANGE_PAGE_TEMPLATE = 'password_change.html'
 
 EMAIL_MAIL_TOKEN_LIFE = 60 * 60
 EMAIL_PASSWORD_TOKEN_LIFE = 60 * 5

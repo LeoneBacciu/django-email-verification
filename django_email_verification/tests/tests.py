@@ -22,8 +22,6 @@ class LogHandler(logging.StreamHandler):
         self.levelname = levelname
         self.match = match
         self.callback = callback
-        self.warning_found = False
-        self.error_found = False
 
     def emit(self, record):
         msg = self.format(record)
@@ -123,7 +121,7 @@ def test_params_missing(test_user, settings, client):
         settings.EMAIL_TOKEN_LIFE = None
         send_email(test_user)
     with pytest.raises(NotAllFieldCompiled):
-        settings.EMAIL_PASSWORD_PAGE_TEMPLATE = None
+        settings.EMAIL_PASSWORD_CHANGE_PAGE_TEMPLATE = None
         client.get('/confirm/password/_')
 
 
