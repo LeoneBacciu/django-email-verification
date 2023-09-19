@@ -76,8 +76,8 @@ and everything else will continue working just the same.\
 For both Email Verification and Password Recovery, the features can be divided into:
 
 1. [Email Sending](#email-sending)
-2. Verification/Recovery View
-3. Verification/Recovery Action
+2. [Verification / Recovery View](#verification--recovery-view)
+3. [Verification / Recovery Action](#verification--recovery-action)
 
 ## Installation
 
@@ -148,6 +148,8 @@ EMAIL_USE_TLS = True
 
 ```
 
+For simplicity, I will refer to both `XX_MAIL_XX` and `XX_PASSWORD_XX` by writing `XX_{MAIL|PASSWORD}_XX`.
+
 In detail:
 
 + `EMAIL_FROM_ADDRESS`: this can be the same as `EMAIL_HOST_USER` or an alias address if required.
@@ -172,7 +174,21 @@ official [documentation](https://docs.djangoproject.com/en/4.2/topics/email/).
 
 ## Email Sending
 
-After you have created the user you can send the confirm email
+The functions in charge of sending the emails are the following:
+
+```python
+send_email(user, thread=True, expiry=None, context=None)
+send_password(user, thread=True, expiry=None, context=None)
+```
+
+The fields are:
+ - `user` (`Model`): the user you want to send the email to
+ - `thread` (`bool`): whether to send the email asynchronously or not
+ - `expiry` (`datetime`): custom token expiry date (different from `datetime.now() + EMAIL_{MAIL|PASSWORD}_TOKEN_LIFE`)
+ - `context` (`dict`): additional context for the email template
+
+> **NOTE**: By default the email is sent asynchronously, which is the suggested behaviour, if this is a problem (for
+> example if you are running synchronous tests), you can pass the parameter `thread=False`.
 
 ```python
 from django.shortcuts import render
@@ -180,19 +196,25 @@ from django.contrib.auth import get_user_model
 from django_email_verification import send_email
 
 
-def my_functional_view(request):
+def create_account_functional_view(request):
     ...
     user = get_user_model().objects.create(username=username, password=password, email=email)
     user.is_active = False  # Example
     send_email(user)
     return render(...)
+
+
+def recover_password_functional_view(request):
+    ...
+    send_password(user)
+    return render(...)
 ```
 
-`send_email(user)` sends an email with the defined template (and the pseudo-random generated token) to the user.
+`send_email(user)` and `send_password(user)` send an email with the defined template (and the pseudo-random generated token) to the user.
 
-> **_IMPORTANT:_** You have to manually set the user to inactive before sending the email.
+> **_IMPORTANT:_** For email verification, you have to manually set the user to inactive before sending the email.
 
-If you are using class based views, then it is necessary to call the superclass before calling the `send_confirm`
+If you are using class based views, then it is necessary to call the superclass before calling the `send_email`
 method.
 
 ```python
@@ -200,31 +222,28 @@ from django.views.generic.edit import FormView
 from django_email_verification import send_email
 
 
-class MyClassView(FormView):
+class CreateAccountClassView(FormView):
 
     def form_valid(self, form):
         user = form.save()
-        returnVal = super(MyClassView, self).form_valid(form)
+        return_val = super(CreateAccountClassView, self).form_valid(form)
         send_email(user)
-        return returnVal
+        return return_val
 ```
 
-> **NOTE**: By default the email is sent asynchronously, which is the suggested behaviour, if this is a problem (for
-> example if you are running synchronous tests), you can pass the parameter `thread`:
->
->     send_email(user, thread=False) # When this function returns, the email has been sent
 
 ### Templates examples
 
-The `EMAIL_MAIL_SUBJECT` should look like this; (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
-passed during the rendering).
+The `EMAIL_{MAIL|PASSWORD}_SUBJECT` is a template that receives `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom context) as arguments,
+it might look something like this:
 
 ```python
 EMAIL_MAIL_SUBJECT = 'Confirm your email {{ user.username }}'
+EMAIL_PASSWORD_SUBJECT = 'Change password request for {{ user.username }}'
 ```
 
-The `EMAIL_MAIL_HTML` should look like this; (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
-passed during the rendering).
+The `EMAIL_{MAIL|PASSWORD}_HTML` is a template that receives `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom contex) as arguments,
+it might look something like this:
 
 ```html
 <h1>You are almost there, {{ user.username }}!</h1><br>
@@ -232,8 +251,8 @@ passed during the rendering).
 <h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
 ```
 
-The `EMAIL_MAIL_PLAIN` should look like this; (`{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) are
-passed during the rendering).
+The `EMAIL_{MAIL|PASSWORD}_PLAIN` is a template that receives `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom contex) as arguments,
+it might look something like this:
 
 ```text
 You are almost there, {{ user.username }}!
@@ -241,8 +260,28 @@ Please click the following link to confirm your account: {{ link }}
 The token expires on {{ expiry|time:"TIME_FORMAT" }}
 ```
 
-The `EMAIL_MAIL_PAGE_TEMPLATE` should look like this; (`{{ success }}`(`bool`), `{{ user }}`(`Model`)
-and `{{ request }}`(`WSGIRequest`) are passed during the rendering).
+## Verification / Recovery View
+
+The easiest way to recieve the token is to use the builtin views.
+To do so you just need to include the application's urls and define the necessary Django templates.
+
+```python
+from django.contrib import admin
+from django.urls import path, include
+from django_email_verification import urls as email_urls  # include the urls
+
+urlpatterns = [
+  path('admin/', admin.site.urls),
+  ...
+  path('email/', include(email_urls)),  # connect them to an arbitrary path
+]
+```
+When a request arrives to `https.//mydomain.com/email/email/<token>` the package verifies the token and:
+ + if it corresponds to a pending token it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=True`
+ + if it doesn't correspond it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=False`
+
+The `EMAIL_MAIL_PAGE_TEMPLATE` is a template that receives `{{ success }}`(`bool`), `{{ user }}`(`Model`) and `{{ request }}`(`WSGIRequest`) as arguments,
+it might look something like this:
 
 ```html
 <!DOCTYPE html>
@@ -261,28 +300,61 @@ Error, invalid token!
 </html>
 ```
 
-## Token verification
+When a request arrives to `https.//mydomain.com/email/password/<token>` the package renders `EMAIL_PASSWORD_CHANGE_TEMPLATE`.
+This view should present a form that submits a POST request to the same url, passing a `password` field in the body.
+
+The `EMAIL_PASSWORD_CHANGE_TEMPLATE` is a template that receives `{{ user }}`(`Model`) and `{{ request }}`(`WSGIRequest`) as arguments,
+it might look something like this:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Password Change</title>
+</head>
+<body>
+{{ user.username }}, set your new password:
+<form method="post">
+  <label for="password">New Password:</label>
+  <input type="password" id="password" name="password">
+  <input type="submit" value="Submit">
+</form>
+</body>
+</html>
+```
+
+Once the POST request it's submitted, the server verifies the token and:
++ if it corresponds to a pending token it renders the `EMAIL_PASSWORD_TEMPLATE`
++ if it doesn't correspond it renders the `EMAIL_PASSWORD_TEMPLATE` passing `success=False`
+
+The `EMAIL_MAIL_PAGE_TEMPLATE` is a template that receives `{{ success }}`(`bool`), `{{ user }}`(`Model`) and `{{ request }}`(`WSGIRequest`) as arguments,
+it might look something like this:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Password Changed</title>
+</head>
+<body>
+{% if success %}
+{{ user.username }}, your password has been changed!
+{% else %}
+Error, invalid token!
+{% endif %}
+</body>
+</html>
+```
+
+## Verification / Recovery Action
+
+If you are using the builtin views, when the server recives the correct token for email verification, it calls the `EMAIL_MAIL_CALLBACK` function.
+If you are using the builtin views, when the server recives the correct token for password recovery, it calls the `EMAIL_PASSWORD_CALLBACK` function.
 
 There are two ways to get the token verified:
 
-+ The first one is the simplest: you just have to include the app urls in `urls.py`
-
-    ```python
-    from django.contrib import admin
-    from django.urls import path, include
-    from django_email_verification import urls as email_urls  # include the urls
-
-    urlpatterns = [
-      path('admin/', admin.site.urls),
-      ...
-      path('email/', include(email_urls)),  # connect them to an arbitrary path
-    ]
-  ```
-  When a request arrives to `https.//mydomain.com/email/<token>` the package verifies the token and:
-
-    + if it corresponds to a pending token it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=True` and deletes
-      the token
-    + if it doesn't correspond it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=False`
 
 
 + The second one is more customizable: you can build your own view for verification, mark it as `@verify_view`, verify
@@ -372,6 +444,6 @@ Logo by <a href="https://github.com/filippoveggo" title="Flippo Veggo">Filippo V
 <div>Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pixel perfect">Pixel perfect</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 
 [^1]: The `EMAIL_{MAIL|PASSWORD}_CALLBACK` can be a function on the `AUTH_USER_MODEL`, for example:
-```python
-EMAIL_{MAIL|PASSWORD}_CALLBACK = get_user_model().callback
-```
+    ```python
+    EMAIL_{MAIL|PASSWORD}_CALLBACK = get_user_model().callback
+    ```
