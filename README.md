@@ -14,11 +14,6 @@ Do you like my work and want to support me?<br/><br/>
 <a href="https://www.buymeacoffee.com/LeoneBacciu" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 </p>
 
-> ## 🚧 Work in progress 🚧
-> The package now also provides all the feature needed for **password recovery**, but the documentation is not ready
-> yet. \
-> Thanks for your patience!
-
 ## Requirements
 
 + Python >= 3.8
@@ -77,7 +72,6 @@ For both Email Verification and Password Recovery, the features can be divided i
 
 1. [Email Sending](#email-sending)
 2. [Verification / Recovery View](#verification--recovery-view)
-3. [Verification / Recovery Action](#verification--recovery-action)
 
 ## Installation
 
@@ -103,6 +97,8 @@ INSTALLED_APPS = [
 You have to add these parameters to the settings, you have to include all of them except the last one:
 
 ```python
+# settings.py
+
 def email_verified_callback(user):
     user.is_active = True
 
@@ -144,8 +140,6 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'mymail@gmail.com'
 EMAIL_HOST_PASSWORD = 'mYC00lP4ssw0rd'  # os.environ['password_key'] suggested
 EMAIL_USE_TLS = True
-
-
 ```
 
 For simplicity, I will refer to both `XX_MAIL_XX` and `XX_PASSWORD_XX` by writing `XX_{MAIL|PASSWORD}_XX`.
@@ -191,6 +185,8 @@ The fields are:
 > example if you are running synchronous tests), you can pass the parameter `thread=False`.
 
 ```python
+# views.py
+
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django_email_verification import send_email
@@ -218,6 +214,8 @@ If you are using class based views, then it is necessary to call the superclass 
 method.
 
 ```python
+# views.py
+
 from django.views.generic.edit import FormView
 from django_email_verification import send_email
 
@@ -234,7 +232,7 @@ class CreateAccountClassView(FormView):
 
 ### Templates examples
 
-The `EMAIL_{MAIL|PASSWORD}_SUBJECT` is a template that receives `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom context) as arguments,
+The `EMAIL_{MAIL|PASSWORD}_SUBJECT` is a template that receives `{{ token }}`(`str`), `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom context) as arguments,
 it might look something like this:
 
 ```python
@@ -242,7 +240,7 @@ EMAIL_MAIL_SUBJECT = 'Confirm your email {{ user.username }}'
 EMAIL_PASSWORD_SUBJECT = 'Change password request for {{ user.username }}'
 ```
 
-The `EMAIL_{MAIL|PASSWORD}_HTML` is a template that receives `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom contex) as arguments,
+The `EMAIL_{MAIL|PASSWORD}_HTML` is a template that receives `{{ token }}`(`str`), `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom contex) as arguments,
 it might look something like this:
 
 ```html
@@ -251,7 +249,7 @@ it might look something like this:
 <h2>The token expires on {{ expiry|time:"TIME_FORMAT" }}</h2>
 ```
 
-The `EMAIL_{MAIL|PASSWORD}_PLAIN` is a template that receives `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom contex) as arguments,
+The `EMAIL_{MAIL|PASSWORD}_PLAIN` is a template that receives `{{ token }}`(`str`), `{{ link }}`(`str`), `{{ expiry }}`(`datetime`) and `user`(`Model`) (plus your custom contex) as arguments,
 it might look something like this:
 
 ```text
@@ -262,23 +260,29 @@ The token expires on {{ expiry|time:"TIME_FORMAT" }}
 
 ## Verification / Recovery View
 
+### Builtin Method
+
 The easiest way to recieve the token is to use the builtin views.
 To do so you just need to include the application's urls and define the necessary Django templates.
 
 ```python
+# urls.py
+
 from django.contrib import admin
 from django.urls import path, include
 from django_email_verification import urls as email_urls  # include the urls
 
 urlpatterns = [
-  path('admin/', admin.site.urls),
   ...
   path('email/', include(email_urls)),  # connect them to an arbitrary path
+  ...
 ]
 ```
 When a request arrives to `https.//mydomain.com/email/email/<token>` the package verifies the token and:
  + if it corresponds to a pending token it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=True`
  + if it doesn't correspond it renders the `EMAIL_MAIL_PAGE_TEMPLATE` passing `success=False`
+
+If the token is correct, `EMAIL_MAIL_CALLBACK` is called before the page is returned.
 
 The `EMAIL_MAIL_PAGE_TEMPLATE` is a template that receives `{{ success }}`(`bool`), `{{ user }}`(`Model`) and `{{ request }}`(`WSGIRequest`) as arguments,
 it might look something like this:
@@ -328,6 +332,8 @@ Once the POST request it's submitted, the server verifies the token and:
 + if it corresponds to a pending token it renders the `EMAIL_PASSWORD_TEMPLATE`
 + if it doesn't correspond it renders the `EMAIL_PASSWORD_TEMPLATE` passing `success=False`
 
+If the token is correct, `EMAIL_PASSWORD_CALLBACK` is called before the page is returned.
+
 The `EMAIL_MAIL_PAGE_TEMPLATE` is a template that receives `{{ success }}`(`bool`), `{{ user }}`(`Model`) and `{{ request }}`(`WSGIRequest`) as arguments,
 it might look something like this:
 
@@ -348,46 +354,65 @@ Error, invalid token!
 </html>
 ```
 
-## Verification / Recovery Action
+### Custom View Method
 
-If you are using the builtin views, when the server recives the correct token for email verification, it calls the `EMAIL_MAIL_CALLBACK` function.
-If you are using the builtin views, when the server recives the correct token for password recovery, it calls the `EMAIL_PASSWORD_CALLBACK` function.
+If you want to use your custom Django view for the verification of the token (if you need a more complex behaviour) you can do the following:
 
-There are two ways to get the token verified:
+1. Add your view to the `urls.py` file, using the correct url argument
+2. Mark your view using the corresponding decorator
+3. Call the token verification function
+
+Here is the code:
+
+```python
+# urls.py
+
+from django.urls import path
+from .views import confirm_view, password_view
+
+urlpatterns = [
+    ...
+    path('email/<str:token>/', confirm_view), # remember to set the "token" parameter in the url!
+    path('password/<str:token>/', password_view), # remember to set the "token" parameter in the url!
+    ...
+]
+```
+
+> **_IMPORTANT:_** the path must **NOT** have the `name` attribute set
+
+```python
+# views.py
+
+from django.http import HttpResponse
+from django_email_verification import verify_email, verify_password, verify_email_view, verify_password_view
 
 
-
-+ The second one is more customizable: you can build your own view for verification, mark it as `@verify_view`, verify
-  the token manually with the function `verify_token(token)` and execute your custom logic,
-  here's how:
-
-  ```python
-  ### For the view
-
-  from django.http import HttpResponse
-  from django_email_verification import verify_view, verify_token
+@verify_email_view
+def confirm_view(request, token):
+    success, user = verify_email(token)
+    return HttpResponse(f'Account verified, {user.username}' if success else 'Invalid token')
 
 
-  @verify_view
-  def confirm(request, token):
-      success, user = verify_token(token)
-      return HttpResponse(f'Account verified, {user.username}' if success else 'Invalid token')
-  ```
+@verify_password_view
+def password_view(request, token):
+    if request.method == 'POST' and (pwd := request.POST.get('password')) is not None:
+        success, user = verify_password(token, pwd)
+        return HttpResponse(f'Password Changed, {user.username}' if success else 'Invalid token')
+    return HttpResponse('Wrong Method')
+```
+The decorators allow the app to automatically generate a url with the correct link to the view, as long as there is only one view per decorator and it has the correct arguments.
 
-  ```python
-  ### For the urls
-  
-  from django.urls import path
+The functions `verify_email(token)` and `verify_password(token, password)` verify the token and, if it is correct, call the corresponding callback (`EMAIL_MAIL_CALLBACK` and `EMAIL_PASSWORD_CALLBACK` respectively).
 
-  urlpatterns = [
-      ...
-      path('email/<str:token>/', confirm), # remember to set the "token" parameter in the url!
-      ...
-  ]
-  ```
-  > **_IMPORTANT:_** the path must **NOT** have the `name` attribute set
+#### Manual Token Verification
 
-  The library makes sure one and only one `@verify_view` is present and throws an error if this condition is not met.
+If you only need to check the token, you can use the following code:
+```python
+from django_email_verification import default_token_generator
+
+valid, user = default_token_generator.check_token(token, kind='MAIL')      # For an email token
+valid, user = default_token_generator.check_token(token, kind='PASSWORD')  # For a password token
+```
 
 ## Testing
 
@@ -400,8 +425,7 @@ sent. Retrieve the email and obtain the link (includes token) or the token to us
 from django.core import mail
 
 ...
-test
-body
+test body
 ...
 
 try:
