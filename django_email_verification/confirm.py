@@ -13,6 +13,7 @@ from django.urls import get_resolver
 
 from .errors import InvalidUserModel, NotAllFieldCompiled
 from .token_utils import default_token_generator
+from .utils import convert_base64_images
 
 logger = logging.getLogger('django_email_verification')
 DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR = 'ERROR: more than one verify view found'
@@ -87,7 +88,14 @@ def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_p
 
     html = render_to_string(mail_html, context)
 
-    msg = EmailMultiAlternatives(subject, text, sender, [user.email])
+    do_convert_base64_images = _get_validated_field(f'EMAIL_CONVERT_BASE64_IMAGES', default=False, use_default=True, default_type=bool)
+
+    attachments = []
+    if do_convert_base64_images:
+        # Look for inline base64 images and converts them to attachments for email providers that require them i.e. Gmail
+        html, attachments = convert_base64_images(html, attachments)
+
+    msg = EmailMultiAlternatives(subject, text, sender, [user.email], attachments=attachments)
 
     if debug:
         msg.extra_headers['LINK'] = context['link']
