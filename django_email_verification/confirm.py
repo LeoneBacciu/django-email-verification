@@ -82,18 +82,18 @@ def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_p
         if not validators.url(context['link']):
             logger.warning(f'{DJANGO_EMAIL_VERIFICATION_MALFORMED_URL} - {context["link"]}')
 
-    do_convert_base64_images = _get_validated_field(f'EMAIL_CONVERT_BASE64_IMAGES', default=False, use_default=True, default_type=bool)
-
-    attachments = []
-    if do_convert_base64_images:
-        # Look for inline base64 images and converts them to attachments for email providers that require them i.e. Gmail
-        mail_html, attachments = convert_base64_images(mail_html, attachments)
-
     subject = Template(subject).render(Context(context))
 
     text = render_to_string(mail_plain, context)
 
     html = render_to_string(mail_html, context)
+
+    do_convert_base64_images = _get_validated_field(f'EMAIL_CONVERT_BASE64_IMAGES', default=False, use_default=True, default_type=bool)
+
+    attachments = []
+    if do_convert_base64_images:
+        # Look for inline base64 images and converts them to attachments for email providers that require them i.e. Gmail
+        html, attachments = convert_base64_images(html, attachments)
 
     msg = EmailMultiAlternatives(subject, text, sender, [user.email], attachments=attachments)
 
