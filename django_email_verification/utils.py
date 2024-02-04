@@ -15,13 +15,13 @@ def convert_base64_images(body, attachments):
     def repl(match):
         # Capture subtype in case MIMEImage's use of imghdr.what bugs out in guesesing the file type
         subtype = match.group("subtype")
-        key = hashlib.md5(base64.b64decode(match.group("data"))).hexdigest()
+        key = hashlib.md5(base64.b64decode(match.group("data"))).hexdigest().replace("-", "")
         if key not in base64_images:
            base64_images[key] = {
                 "data": match.group("data"),
                 "subtype": subtype,
             }
-        return ' src="cid:image-%s"' % key
+        return ' src="cid:image%s"' % key
 
     # Compile pattern for base64 inline images
     RE_BASE64_SRC = re.compile(
@@ -44,7 +44,7 @@ def convert_base64_images(body, attachments):
                 )
             else:
                 raise
-        image.add_header('Content-ID', 'image-%s' % key)
+        image.add_header('Content-ID', '<image%s>' % key)
         image.add_header('Content-Disposition', "attachment; filename=%s" % f'image_{random_string(length=6)}')
         attachments.append(image)
 
