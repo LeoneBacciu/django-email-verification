@@ -44,7 +44,7 @@ def convert_base64_images(body, attachments):
                 )
             else:
                 raise
-        image.add_header('Content-ID', '<image-%s>' % key)
+        image.add_header('Content-ID', 'image-%s' % key)
         image.add_header('Content-Disposition', "attachment; filename=%s" % f'image_{random_string(length=6)}')
         attachments.append(image)
 
