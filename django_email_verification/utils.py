@@ -21,7 +21,7 @@ def convert_base64_images(body, attachments):
                 "data": match.group("data"),
                 "subtype": subtype,
             }
-        return ' src="cid:image%s"' % key
+        return ' src="cid:image-%s"' % key
 
     # Compile pattern for base64 inline images
     RE_BASE64_SRC = re.compile(
@@ -44,8 +44,8 @@ def convert_base64_images(body, attachments):
                 )
             else:
                 raise
-        image.add_header('Content-ID', '<image%s>' % key)
-        image.add_header('Content-Disposition', "attachment; filename=%s" % f'image_{random_string(length=6)}')
+        image.add_header('Content-ID', '<image-%s>' % key)
+        image.add_header('Content-Disposition', "inline; filename=%s" % f'image_{random_string(length=6)}')
         attachments.append(image)
 
     return body, attachments
