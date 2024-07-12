@@ -15,6 +15,7 @@ from .errors import InvalidUserModel, NotAllFieldCompiled
 from .token_utils import default_token_generator
 
 logger = logging.getLogger('django_email_verification')
+DJANGO_EMAIL_VERIFICATION_URL_ROUTE_ERROR = 'ERROR: no path found url.py'
 DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR = 'ERROR: more than one verify view found'
 DJANGO_EMAIL_VERIFICATION_MALFORMED_URL = 'WARNING: the URL seems to be malformed'
 
@@ -71,6 +72,10 @@ def send_inner_thread(user, kind, token, expiry, sender, domain, subject, mail_p
 
     d = [v[0][0] for k, v in get_resolver(None).reverse_dict.items() if has_decorator(k)]
     d = [a[0][:a[0].index('%')] for a in d if len(a[1])]
+
+    if len(d) == 0:
+        logger.error(DJANGO_EMAIL_VERIFICATION_URL_ROUTE_ERROR)
+        return
 
     if len(d) > 1:
         logger.error(f'{DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR}: {d}')
