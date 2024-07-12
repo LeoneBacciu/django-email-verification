@@ -92,6 +92,15 @@ INSTALLED_APPS = [
 ]
 ```
 
+and add the following to your `urls.py` file:
+
+```
+urlpatterns = [
+    ...
+    path('verify/', include('django_email_verification.urls')),
+    ...
+]
+```
 ## Settings parameters
 
 You have to add these parameters to the settings, you have to include all of them except the last one:

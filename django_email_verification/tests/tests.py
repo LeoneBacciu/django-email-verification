@@ -12,7 +12,7 @@ from django.test import Client
 
 from django_email_verification import send_password, send_email
 from django_email_verification.confirm import DJANGO_EMAIL_VERIFICATION_MORE_VIEWS_ERROR, \
-    DJANGO_EMAIL_VERIFICATION_MALFORMED_URL
+    DJANGO_EMAIL_VERIFICATION_MALFORMED_URL, DJANGO_EMAIL_VERIFICATION_URL_ROUTE_ERROR
 from django_email_verification.errors import NotAllFieldCompiled, InvalidUserModel
 
 
@@ -294,6 +294,23 @@ def test_log_too_many_verify_view(test_user):
     test_user.is_active = False
     send_email(test_user, thread=False)
     assert error_raised, 'No error raised if multiple views are found'
+
+
+@pytest.mark.urls('django_email_verification.tests.urls_test_2')
+@pytest.mark.django_db
+def test_log_urls_are_not_setup(test_user):
+    error_raised = False
+
+    def raise_error():
+        nonlocal error_raised
+        error_raised = True
+
+    handler = LogHandler('ERROR', DJANGO_EMAIL_VERIFICATION_URL_ROUTE_ERROR, raise_error)
+    logger = logging.getLogger('django_email_verification')
+    logger.addHandler(handler)
+    test_user.is_active = False
+    send_email(test_user, thread=False)
+    assert error_raised, 'No error raised if url path is missing'
 
 
 @pytest.mark.django_db
