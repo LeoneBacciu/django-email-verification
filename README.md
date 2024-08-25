@@ -343,7 +343,7 @@ Once the POST request it's submitted, the server verifies the token and:
 
 If the token is correct, `EMAIL_PASSWORD_CALLBACK` is called before the page is returned.
 
-The `EMAIL_MAIL_PAGE_TEMPLATE` is a template that receives `{{ success }}`(`bool`), `{{ user }}`(`Model`) and `{{ request }}`(`WSGIRequest`) as arguments,
+The `EMAIL_PASSWORD_PAGE_TEMPLATE` is a template that receives `{{ success }}`(`bool`), `{{ user }}`(`Model`) and `{{ request }}`(`WSGIRequest`) as arguments,
 it might look something like this:
 
 ```html
